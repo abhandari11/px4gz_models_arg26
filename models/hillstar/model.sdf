@@ -1,0 +1,664 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf version='1.9'>
+  <model name='hillstar'>
+    <pose>0 0 0.30 0 0 0</pose>
+    <self_collide>false</self_collide>
+    <static>false</static>
+    <link name='base_link'>
+      <pose>0 0 0 0 0 0</pose>
+      <gravity>true</gravity>
+      <velocity_decay/>
+      <inertial>
+        <mass>3.2</mass>
+        <inertia>
+          <ixx>0.005</ixx>
+          <iyy>0.005</iyy>
+          <izz>0.006</izz>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <collision name='collision_base_link'>
+        <geometry>
+          <box>
+            <size>0.230 0.230 0.45</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name='visual_base_link'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+          <uri>model://hillstar/stl_files/body_frame_subassembly.stl</uri>
+          </mesh>
+        </geometry>
+      <material>
+        <ambient>0.3 0.3 0.3 1</ambient>
+        <diffuse>0.75 0.75 0.75 1</diffuse>
+        <specular>0.35 0.35 0.35 1</specular>
+      </material>
+      </visual>
+
+      <!-- the sensors attached on the main body should go here -->
+      <sensor name="air_pressure_sensor" type="air_pressure">
+        <always_on>1</always_on>
+        <update_rate>50</update_rate>
+        <air_pressure>
+          <pressure>
+            <noise type="gaussian">
+              <mean>0</mean>
+              <stddev>0.01</stddev>
+            </noise>
+          </pressure>
+        </air_pressure>
+      </sensor>
+      <sensor name="imu_sensor" type="imu">
+        <always_on>1</always_on>
+        <update_rate>250</update_rate>
+        <imu>
+          <angular_velocity>
+            <x>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>0.00018665</stddev>
+                <dynamic_bias_stddev>3.8785e-05</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>1000</dynamic_bias_correlation_time>
+              </noise>
+            </x>
+            <y>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>0.00018665</stddev>
+                <dynamic_bias_stddev>3.8785e-05</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>1000</dynamic_bias_correlation_time>
+              </noise>
+            </y>
+            <z>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>0.00018665</stddev>
+                <dynamic_bias_stddev>3.8785e-05</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>1000</dynamic_bias_correlation_time>
+              </noise>
+            </z>
+          </angular_velocity>
+          <linear_acceleration>
+            <x>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>0.00186</stddev>
+                <dynamic_bias_stddev>0.006</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>300</dynamic_bias_correlation_time>
+              </noise>
+            </x>
+            <y>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>0.00186</stddev>
+                <dynamic_bias_stddev>0.006</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>300</dynamic_bias_correlation_time>
+              </noise>
+            </y>
+            <z>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>0.00186</stddev>
+                <dynamic_bias_stddev>0.006</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>300</dynamic_bias_correlation_time>
+              </noise>
+            </z>
+          </linear_acceleration>
+        </imu>
+      </sensor>
+      <sensor name="navsat_sensor" type="navsat">
+        <always_on>1</always_on>
+        <update_rate>30</update_rate>
+      </sensor>
+    </link>
+
+    <!-- ARM - 0 -->
+    <!--  -->
+    <!-- The link for individual arm assembly -->
+    <link name = "arm_0">
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <pose>0.102 -0.102 0.02 0 0 0.785</pose>
+      <inertial>
+        <mass>0.2</mass>
+          <inertia>
+            <ixx>4.16e-4</ixx>
+            <iyy>3.85e-5</iyy>
+            <izz>4.16e-4</izz>
+          </inertia>
+      </inertial>
+      <visual name='visual_arm_assembly_0'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://hillstar/stl_files/arm.stl</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.25 0.3 0.4 1.0</ambient>
+          <diffuse>0.3 0.35 0.5 1.0</diffuse>
+          <specular>0.3 0.3 0.3 1.0</specular>
+          <emissive>0.0 0.0 0.0 0.0</emissive>
+        </material>
+      </visual>
+      <collision name='collision_arm_assembly_0'>
+        <pose>0 -0.135 0 0 0 0</pose>
+        <!-- origin is at the mounting point, shifting it to COM -->
+        <geometry>
+          <box>
+            <size>0.06 0.27 0.045</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+
+    <!-- The joint for tilting arm_0 -->
+    <joint name="tilt_arm_0" type="revolute">
+      <parent>base_link</parent>
+      <child>arm_0</child>
+      <axis>
+        <xyz>0 -1 0</xyz>
+        <limit>
+          <lower>-3.1415</lower>
+          <upper>3.1415</upper>
+          <effort>3.5</effort>
+          <velocity>6.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.1</damping>
+          <friction>0.05</friction>
+        </dynamics>
+      </axis>
+    </joint>  
+    
+    <!-- Joint Control for the tilting motor-0 -->
+    <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
+      <joint_name>tilt_arm_0</joint_name>
+      <initial_position>0</initial_position>
+      <sub_topic>servo_0</sub_topic>
+      <p_gain>0.8</p_gain>
+      <i_gain>0.4</i_gain>
+    </plugin>
+    
+    <!-- Link for the propeller-0 -->
+    <link name = "prop_0">
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <pose>0.28 -0.28 0.06 0 0 0</pose>
+      <inertial>
+        <mass>0.025</mass>
+          <inertia>
+            <ixx>2.6e-04</ixx>
+            <iyy>3.8e-07</iyy>
+            <izz>2.6e-04</izz>
+          </inertia>
+      </inertial>
+      <visual name='visual_prop_0'>
+        <geometry>
+          <mesh>
+            <uri>model://hillstar/stl_files/prop.stl</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.3 0.32 0.36 1</ambient>
+          <diffuse>0.6 0.65 0.8 1</diffuse>
+          <specular>0.4 0.45 0.55 1</specular>
+        </material>
+      </visual>
+      <collision name='collision_prop_0'>
+        <geometry>
+          <mesh>
+            <uri>model://hillstar/stl_files/prop.stl</uri>
+          </mesh>
+        </geometry>
+      </collision>      
+    </link>
+
+    <!-- Joint for the propeller-0 -->
+    <joint name="rotor_0_joint" type="revolute">
+      <parent>arm_0</parent>
+      <child>prop_0</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>  
+    
+    <!-- Motor object for the propeller-0 -->
+    <plugin filename="gz-sim-multicopter-motor-model-system" name="gz::sim::systems::MulticopterMotorModel">
+      <jointName>rotor_0_joint</jointName>
+      <linkName>prop_0</linkName>
+      <turningDirection>ccw</turningDirection>
+      <timeConstantUp>0.015</timeConstantUp>
+      <timeConstantDown>0.03</timeConstantDown>
+      <maxRotVelocity>855</maxRotVelocity>
+      <motorConstant>3.5e-5</motorConstant>
+      <momentConstant>0.017</momentConstant>
+      <commandSubTopic>command/motor_speed</commandSubTopic>
+      <motorNumber>0</motorNumber>
+      <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
+      <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+      <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+      <motorType>velocity</motorType>
+    </plugin>
+
+    <!-- ARM - 1 -->
+    <!--  -->
+    <!-- The link for individual arm assembly -->
+    <link name = "arm_1">
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <pose>-0.102 0.102 0.02 0 0 -2.356</pose>
+      <inertial>
+        <mass>0.2</mass>
+          <inertia>
+            <ixx>4.16e-4</ixx>
+            <iyy>3.85e-5</iyy>
+            <izz>4.16e-4</izz>
+          </inertia>
+      </inertial>
+      <visual name='visual_arm_assembly_1'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://hillstar/stl_files/arm.stl</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.25 0.3 0.4 1.0</ambient>
+          <diffuse>0.3 0.35 0.5 1.0</diffuse>
+          <specular>0.3 0.3 0.3 1.0</specular>
+          <emissive>0.0 0.0 0.0 0.0</emissive>
+        </material>
+      </visual>
+      <collision name='collision_arm_assembly_1'>
+        <pose>0 -0.135 0 0 0 0</pose>
+        <!-- origin is at the mounting point, shifting it to COM -->
+        <geometry>
+          <box>
+            <size>0.06 0.27 0.045</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+
+    <!-- The joint for tilting arm_1 -->
+    <joint name="tilt_arm_1" type="revolute">
+      <parent>base_link</parent>
+      <child>arm_1</child>
+      <axis>
+        <xyz>0 -1 0</xyz>
+        <limit>
+          <lower>-3.1415</lower>
+          <upper>3.1415</upper>
+          <effort>3.5</effort>
+          <velocity>6.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.1</damping>
+          <friction>0.05</friction>
+        </dynamics>
+      </axis>
+    </joint>  
+    
+    <!-- Joint Control for the tilting motor-1 -->
+    <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
+      <joint_name>tilt_arm_1</joint_name>
+      <initial_position>0</initial_position>
+      <sub_topic>servo_1</sub_topic>
+      <p_gain>0.8</p_gain>
+      <i_gain>0.4</i_gain>
+    </plugin>
+    
+    <!-- Link for the propeller-1 -->
+    <link name = "prop_1">
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <pose>-0.28 0.28 0.06 0 0 0</pose>
+      <inertial>
+        <mass>0.025</mass>
+          <inertia>
+            <ixx>2.6e-04</ixx>
+            <iyy>3.8e-07</iyy>
+            <izz>2.6e-04</izz>
+          </inertia>
+      </inertial>
+      <visual name='visual_prop_1'>
+        <geometry>
+          <mesh>
+            <uri>model://hillstar/stl_files/prop.stl</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.3 0.32 0.36 1</ambient>
+          <diffuse>0.6 0.65 0.8 1</diffuse>
+          <specular>0.4 0.45 0.55 1</specular>
+        </material>
+      </visual>
+      <collision name='collision_prop_1'>
+        <geometry>
+          <mesh>
+            <uri>model://hillstar/stl_files/prop.stl</uri>
+          </mesh>
+        </geometry>
+      </collision>      
+    </link>
+
+    <!-- Joint for the propeller-1 -->
+    <joint name="rotor_1_joint" type="revolute">
+      <parent>arm_1</parent>
+      <child>prop_1</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>  
+    
+    <!-- Motor object for the propeller-1 -->
+    <plugin filename="gz-sim-multicopter-motor-model-system" name="gz::sim::systems::MulticopterMotorModel">
+      <jointName>rotor_1_joint</jointName>
+      <linkName>prop_1</linkName>
+      <turningDirection>ccw</turningDirection>
+      <timeConstantUp>0.015</timeConstantUp>
+      <timeConstantDown>0.03</timeConstantDown>
+      <maxRotVelocity>855</maxRotVelocity>
+      <motorConstant>3.5e-5</motorConstant>
+      <momentConstant>0.017</momentConstant>
+      <commandSubTopic>command/motor_speed</commandSubTopic>
+      <motorNumber>1</motorNumber>
+      <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
+      <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+      <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+      <motorType>velocity</motorType>
+    </plugin>
+
+
+    <!-- ARM - 2 -->
+    <!--  -->
+    <!-- The link for individual arm assembly -->
+    <link name = "arm_2">
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <pose>0.102 0.102 0.02 0 0 2.356</pose>
+      <inertial>
+        <mass>0.2</mass>
+          <inertia>
+            <ixx>4.16e-4</ixx>
+            <iyy>3.85e-5</iyy>
+            <izz>4.16e-4</izz>
+          </inertia>
+      </inertial>
+      <visual name='visual_arm_assembly_2'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://hillstar/stl_files/arm.stl</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.25 0.3 0.4 1.0</ambient>
+          <diffuse>0.3 0.35 0.5 1.0</diffuse>
+          <specular>0.3 0.3 0.3 1.0</specular>
+          <emissive>0.0 0.0 0.0 0.0</emissive>
+        </material>
+      </visual>
+      <collision name='collision_arm_assembly_2'>
+        <pose>0 -0.135 0 0 0 0</pose>
+        <!-- origin is at the mounting point, shifting it to COM -->
+        <geometry>
+          <box>
+            <size>0.06 0.27 0.045</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+
+    <!-- The joint for tilting arm_2 -->
+    <joint name="tilt_arm_2" type="revolute">
+      <parent>base_link</parent>
+      <child>arm_2</child>
+      <axis>
+        <xyz>0 -1 0</xyz>
+        <limit>
+          <lower>-3.1415</lower>
+          <upper>3.1415</upper>
+          <effort>3.5</effort>
+          <velocity>6.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.1</damping>
+          <friction>0.05</friction>
+        </dynamics>
+      </axis>
+    </joint>  
+    
+    <!-- Joint Control for the tilting motor-2 -->
+    <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
+      <joint_name>tilt_arm_2</joint_name>
+      <initial_position>0</initial_position>
+      <sub_topic>servo_2</sub_topic>
+      <p_gain>0.8</p_gain>
+      <i_gain>0.4</i_gain>
+    </plugin>
+    
+    <!-- Link for the propeller-2 -->
+    <link name = "prop_2">
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <pose>0.28 0.28 0.06 0 0 0</pose>
+      <inertial>
+        <mass>0.025</mass>
+          <inertia>
+            <ixx>2.6e-04</ixx>
+            <iyy>3.8e-07</iyy>
+            <izz>2.6e-04</izz>
+          </inertia>
+      </inertial>
+      <visual name='visual_prop_2'>
+        <geometry>
+          <mesh>
+            <uri>model://hillstar/stl_files/prop.stl</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.3 0.32 0.36 1</ambient>
+          <diffuse>0.6 0.65 0.8 1</diffuse>
+          <specular>0.4 0.45 0.55 1</specular>
+        </material>
+      </visual>
+      <collision name='collision_prop_2'>
+        <geometry>
+          <mesh>
+            <uri>model://hillstar/stl_files/prop.stl</uri>
+          </mesh>
+        </geometry>
+      </collision>      
+    </link>
+
+    <!-- Joint for the propeller-2 -->
+    <joint name="rotor_2_joint" type="revolute">
+      <parent>arm_2</parent>
+      <child>prop_2</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>  
+    
+    <!-- Motor object for the propeller-2 -->
+    <plugin filename="gz-sim-multicopter-motor-model-system" name="gz::sim::systems::MulticopterMotorModel">
+      <jointName>rotor_2_joint</jointName>
+      <linkName>prop_2</linkName>
+      <turningDirection>cw</turningDirection>
+      <timeConstantUp>0.015</timeConstantUp>
+      <timeConstantDown>0.03</timeConstantDown>
+      <maxRotVelocity>855</maxRotVelocity>
+      <motorConstant>3.5e-5</motorConstant>
+      <momentConstant>0.017</momentConstant>
+      <commandSubTopic>command/motor_speed</commandSubTopic>
+      <motorNumber>2</motorNumber>
+      <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
+      <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+      <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+      <motorType>velocity</motorType>
+    </plugin>
+    
+        <!-- ARM - 3 -->
+    <!--  -->
+    <!-- The link for individual arm assembly -->
+    <link name = "arm_3">
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <pose>-0.102 -0.102 0.02 0 0 -0.785</pose>
+      <inertial>
+        <mass>0.2</mass>
+          <inertia>
+            <ixx>4.16e-4</ixx>
+            <iyy>3.85e-5</iyy>
+            <izz>4.16e-4</izz>
+          </inertia>
+      </inertial>
+      <visual name='visual_arm_assembly_3'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://hillstar/stl_files/arm.stl</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.25 0.3 0.4 1.0</ambient>
+          <diffuse>0.3 0.35 0.5 1.0</diffuse>
+          <specular>0.3 0.3 0.3 1.0</specular>
+          <emissive>0.0 0.0 0.0 0.0</emissive>
+        </material>
+      </visual>
+      <collision name='collision_arm_assembly_3'>
+        <pose>0 -0.135 0 0 0 0</pose>
+        <!-- origin is at the mounting point, shifting it to COM -->
+        <geometry>
+          <box>
+            <size>0.06 0.27 0.045</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+
+    <!-- The joint for tilting arm_3 -->
+    <joint name="tilt_arm_3" type="revolute">
+      <parent>base_link</parent>
+      <child>arm_3</child>
+      <axis>
+        <xyz>0 -1 0</xyz>
+        <limit>
+          <lower>-3.1415</lower>
+          <upper>3.1415</upper>
+          <effort>3.5</effort>
+          <velocity>6.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.1</damping>
+          <friction>0.05</friction>
+        </dynamics>
+      </axis>
+    </joint>  
+    
+    <!-- Joint Control for the tilting motor-3 -->
+    <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
+      <joint_name>tilt_arm_3</joint_name>
+      <initial_position>0</initial_position>
+      <sub_topic>servo_3</sub_topic>
+      <p_gain>0.8</p_gain>
+      <i_gain>0.4</i_gain>
+    </plugin>
+    
+    <!-- Link for the propeller-3 -->
+    <link name = "prop_3">
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <pose>-0.28 -0.28 0.06 0 0 0</pose>
+      <inertial>
+        <mass>0.025</mass>
+          <inertia>
+            <ixx>2.6e-04</ixx>
+            <iyy>3.8e-07</iyy>
+            <izz>2.6e-04</izz>
+          </inertia>
+      </inertial>
+      <visual name='visual_prop_3'>
+        <geometry>
+          <mesh>
+            <uri>model://hillstar/stl_files/prop.stl</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.3 0.32 0.36 1</ambient>
+          <diffuse>0.6 0.65 0.8 1</diffuse>
+          <specular>0.4 0.45 0.55 1</specular>
+        </material>
+      </visual>
+      <collision name='collision_prop_3'>
+        <geometry>
+          <mesh>
+            <uri>model://hillstar/stl_files/prop.stl</uri>
+          </mesh>
+        </geometry>
+      </collision>      
+    </link>
+
+    <!-- Joint for the propeller-3 -->
+    <joint name="rotor_3_joint" type="revolute">
+      <parent>arm_3</parent>
+      <child>prop_3</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>  
+    
+    <!-- Motor object for the propeller-3 -->
+    <plugin filename="gz-sim-multicopter-motor-model-system" name="gz::sim::systems::MulticopterMotorModel">
+      <jointName>rotor_3_joint</jointName>
+      <linkName>prop_3</linkName>
+      <turningDirection>cw</turningDirection>
+      <timeConstantUp>0.015</timeConstantUp>
+      <timeConstantDown>0.03</timeConstantDown>
+      <maxRotVelocity>855</maxRotVelocity>
+      <motorConstant>3.5e-5</motorConstant>
+      <momentConstant>0.017</momentConstant>
+      <commandSubTopic>command/motor_speed</commandSubTopic>
+      <motorNumber>3</motorNumber>
+      <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
+      <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+      <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+      <motorType>velocity</motorType>
+    </plugin>
+
+
+    
+  </model>
+</sdf>
