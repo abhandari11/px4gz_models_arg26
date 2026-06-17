@@ -9,11 +9,11 @@
       <gravity>true</gravity>
       <velocity_decay/>
       <inertial>
-        <mass>3.2</mass>
+        <mass>3.26</mass>
         <inertia>
-          <ixx>0.005</ixx>
-          <iyy>0.005</iyy>
-          <izz>0.006</izz>
+          <ixx>0.0205</ixx>
+          <iyy>0.0177</iyy>
+          <izz>0.0225</izz>
           <ixy>0</ixy>
           <ixz>0</ixz>
           <iyz>0</iyz>
@@ -33,11 +33,11 @@
           <uri>model://hillstar/stl_files/body_frame_subassembly.stl</uri>
           </mesh>
         </geometry>
-      <material>
-        <ambient>0.3 0.3 0.3 1</ambient>
-        <diffuse>0.75 0.75 0.75 1</diffuse>
-        <specular>0.35 0.35 0.35 1</specular>
-      </material>
+        <material>
+          <ambient>0.2 0.2 0.2 1</ambient>
+          <diffuse>0.5 0.5 0.5 1</diffuse>
+          <specular>0.25 0.25 0.25 1</specular>
+        </material>
       </visual>
 
       <!-- the sensors attached on the main body should go here -->
@@ -128,9 +128,9 @@
       <inertial>
         <mass>0.2</mass>
           <inertia>
-            <ixx>4.16e-4</ixx>
-            <iyy>3.85e-5</iyy>
-            <izz>4.16e-4</izz>
+            <ixx>9.1e-4</ixx>
+            <iyy>7.1e-5</iyy>
+            <izz>9.1e-4</izz>
           </inertia>
       </inertial>
       <visual name='visual_arm_assembly_0'>
@@ -149,7 +149,7 @@
       </visual>
       <collision name='collision_arm_assembly_0'>
         <pose>0 -0.135 0 0 0 0</pose>
-        <!-- origin is at the mounting point, shifting it to COM -->
+        <!-- origin is at the mounting point, shifting it to Center of Geometry -->
         <geometry>
           <box>
             <size>0.06 0.27 0.045</size>
@@ -171,8 +171,8 @@
           <velocity>6.0</velocity>
         </limit>
         <dynamics>
-          <damping>0.1</damping>
-          <friction>0.05</friction>
+          <damping>0.05</damping>
+          <friction>0.025</friction>
         </dynamics>
       </axis>
     </joint>  
@@ -182,8 +182,9 @@
       <joint_name>tilt_arm_0</joint_name>
       <initial_position>0</initial_position>
       <sub_topic>servo_0</sub_topic>
-      <p_gain>0.8</p_gain>
-      <i_gain>0.4</i_gain>
+      <p_gain>8.0</p_gain>
+      <i_gain>0.1</i_gain>
+      <d_gain>0.3</d_gain>
     </plugin>
     
     <!-- Link for the propeller-0 -->
@@ -195,8 +196,8 @@
       <inertial>
         <mass>0.025</mass>
           <inertia>
-            <ixx>2.6e-04</ixx>
-            <iyy>3.8e-07</iyy>
+            <ixx>8.8e-07</ixx>
+            <iyy>2.6e-04</iyy>
             <izz>2.6e-04</izz>
           </inertia>
       </inertial>
@@ -263,9 +264,9 @@
       <inertial>
         <mass>0.2</mass>
           <inertia>
-            <ixx>4.16e-4</ixx>
-            <iyy>3.85e-5</iyy>
-            <izz>4.16e-4</izz>
+            <ixx>9.1e-4</ixx>
+            <iyy>7.1e-5</iyy>
+            <izz>9.1e-4</izz>
           </inertia>
       </inertial>
       <visual name='visual_arm_assembly_1'>
@@ -284,7 +285,7 @@
       </visual>
       <collision name='collision_arm_assembly_1'>
         <pose>0 -0.135 0 0 0 0</pose>
-        <!-- origin is at the mounting point, shifting it to COM -->
+        <!-- origin is at the mounting point, shifting it to Center of Geometry -->
         <geometry>
           <box>
             <size>0.06 0.27 0.045</size>
@@ -306,8 +307,8 @@
           <velocity>6.0</velocity>
         </limit>
         <dynamics>
-          <damping>0.1</damping>
-          <friction>0.05</friction>
+          <damping>0.05</damping>
+          <friction>0.025</friction>
         </dynamics>
       </axis>
     </joint>  
@@ -317,8 +318,9 @@
       <joint_name>tilt_arm_1</joint_name>
       <initial_position>0</initial_position>
       <sub_topic>servo_1</sub_topic>
-      <p_gain>0.8</p_gain>
-      <i_gain>0.4</i_gain>
+      <p_gain>8.0</p_gain>
+      <i_gain>0.1</i_gain>
+      <d_gain>0.3</d_gain>
     </plugin>
     
     <!-- Link for the propeller-1 -->
@@ -330,8 +332,8 @@
       <inertial>
         <mass>0.025</mass>
           <inertia>
-            <ixx>2.6e-04</ixx>
-            <iyy>3.8e-07</iyy>
+            <ixx>8.8e-07</ixx>
+            <iyy>2.6e-04</iyy>
             <izz>2.6e-04</izz>
           </inertia>
       </inertial>
@@ -399,9 +401,9 @@
       <inertial>
         <mass>0.2</mass>
           <inertia>
-            <ixx>4.16e-4</ixx>
-            <iyy>3.85e-5</iyy>
-            <izz>4.16e-4</izz>
+            <ixx>9.1e-4</ixx>
+            <iyy>7.1e-5</iyy>
+            <izz>9.1e-4</izz>
           </inertia>
       </inertial>
       <visual name='visual_arm_assembly_2'>
@@ -420,7 +422,7 @@
       </visual>
       <collision name='collision_arm_assembly_2'>
         <pose>0 -0.135 0 0 0 0</pose>
-        <!-- origin is at the mounting point, shifting it to COM -->
+        <!-- origin is at the mounting point, shifting it to Center of Geometry -->
         <geometry>
           <box>
             <size>0.06 0.27 0.045</size>
@@ -442,8 +444,8 @@
           <velocity>6.0</velocity>
         </limit>
         <dynamics>
-          <damping>0.1</damping>
-          <friction>0.05</friction>
+          <damping>0.05</damping>
+          <friction>0.025</friction>
         </dynamics>
       </axis>
     </joint>  
@@ -453,8 +455,9 @@
       <joint_name>tilt_arm_2</joint_name>
       <initial_position>0</initial_position>
       <sub_topic>servo_2</sub_topic>
-      <p_gain>0.8</p_gain>
-      <i_gain>0.4</i_gain>
+      <p_gain>8.0</p_gain>
+      <i_gain>0.1</i_gain>
+      <d_gain>0.3</d_gain>
     </plugin>
     
     <!-- Link for the propeller-2 -->
@@ -466,8 +469,8 @@
       <inertial>
         <mass>0.025</mass>
           <inertia>
-            <ixx>2.6e-04</ixx>
-            <iyy>3.8e-07</iyy>
+            <ixx>8.8e-07</ixx>
+            <iyy>2.6e-04</iyy>
             <izz>2.6e-04</izz>
           </inertia>
       </inertial>
@@ -534,9 +537,9 @@
       <inertial>
         <mass>0.2</mass>
           <inertia>
-            <ixx>4.16e-4</ixx>
-            <iyy>3.85e-5</iyy>
-            <izz>4.16e-4</izz>
+            <ixx>9.1e-4</ixx>
+            <iyy>7.1e-5</iyy>
+            <izz>9.1e-4</izz>
           </inertia>
       </inertial>
       <visual name='visual_arm_assembly_3'>
@@ -555,7 +558,7 @@
       </visual>
       <collision name='collision_arm_assembly_3'>
         <pose>0 -0.135 0 0 0 0</pose>
-        <!-- origin is at the mounting point, shifting it to COM -->
+        <!-- origin is at the mounting point, shifting it to Center of Geometry -->
         <geometry>
           <box>
             <size>0.06 0.27 0.045</size>
@@ -577,8 +580,8 @@
           <velocity>6.0</velocity>
         </limit>
         <dynamics>
-          <damping>0.1</damping>
-          <friction>0.05</friction>
+          <damping>0.05</damping>
+          <friction>0.025</friction>
         </dynamics>
       </axis>
     </joint>  
@@ -588,8 +591,9 @@
       <joint_name>tilt_arm_3</joint_name>
       <initial_position>0</initial_position>
       <sub_topic>servo_3</sub_topic>
-      <p_gain>0.8</p_gain>
-      <i_gain>0.4</i_gain>
+      <p_gain>8.0</p_gain>
+      <i_gain>0.1</i_gain>
+      <d_gain>0.3</d_gain>
     </plugin>
     
     <!-- Link for the propeller-3 -->
@@ -601,8 +605,8 @@
       <inertial>
         <mass>0.025</mass>
           <inertia>
-            <ixx>2.6e-04</ixx>
-            <iyy>3.8e-07</iyy>
+            <ixx>8.8e-07</ixx>
+            <iyy>2.6e-04</iyy>
             <izz>2.6e-04</izz>
           </inertia>
       </inertial>
@@ -658,6 +662,13 @@
       <motorType>velocity</motorType>
     </plugin>
 
+    <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
+      <topic>/hillstar/tilt_angles</topic>
+      <joint_name>tilt_arm_0</joint_name>
+      <joint_name>tilt_arm_1</joint_name>
+      <joint_name>tilt_arm_2</joint_name>
+      <joint_name>tilt_arm_3</joint_name>
+    </plugin>  
 
     
   </model>
