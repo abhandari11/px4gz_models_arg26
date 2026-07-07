@@ -165,18 +165,18 @@
       <axis>
         <xyz>0 -1 0</xyz>
         <limit>
-          <lower>-3.1415</lower>
-          <upper>3.1415</upper>
+          <lower>-1.5707</lower>
+          <upper>1.5707</upper>
           <effort>3.5</effort>
           <velocity>6.0</velocity>
         </limit>
         <dynamics>
-          <damping>0.05</damping>
+          <damping>0.2</damping>
           <friction>0.025</friction>
         </dynamics>
       </axis>
-    </joint>  
-    
+    </joint>
+
     <!-- Joint Control for the tilting motor-0 -->
     <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
       <joint_name>tilt_arm_0</joint_name>
@@ -186,7 +186,7 @@
       <i_gain>0.1</i_gain>
       <d_gain>0.3</d_gain>
     </plugin>
-    
+
     <!-- Link for the propeller-0 -->
     <link name = "prop_0">
       <gravity>true</gravity>
@@ -219,7 +219,7 @@
             <uri>model://hillstar/stl_files/prop.stl</uri>
           </mesh>
         </geometry>
-      </collision>      
+      </collision>
     </link>
 
     <!-- Joint for the propeller-0 -->
@@ -233,8 +233,8 @@
           <spring_stiffness>0</spring_stiffness>
         </dynamics>
       </axis>
-    </joint>  
-    
+    </joint>
+
     <!-- Motor object for the propeller-0 -->
     <plugin filename="gz-sim-multicopter-motor-model-system" name="gz::sim::systems::MulticopterMotorModel">
       <jointName>rotor_0_joint</jointName>
@@ -301,18 +301,18 @@
       <axis>
         <xyz>0 -1 0</xyz>
         <limit>
-          <lower>-3.1415</lower>
-          <upper>3.1415</upper>
+          <lower>-1.5707</lower>
+          <upper>1.5707</upper>
           <effort>3.5</effort>
           <velocity>6.0</velocity>
         </limit>
         <dynamics>
-          <damping>0.05</damping>
+          <damping>0.2</damping>
           <friction>0.025</friction>
         </dynamics>
       </axis>
-    </joint>  
-    
+    </joint>
+
     <!-- Joint Control for the tilting motor-1 -->
     <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
       <joint_name>tilt_arm_1</joint_name>
@@ -322,7 +322,7 @@
       <i_gain>0.1</i_gain>
       <d_gain>0.3</d_gain>
     </plugin>
-    
+
     <!-- Link for the propeller-1 -->
     <link name = "prop_1">
       <gravity>true</gravity>
@@ -355,7 +355,7 @@
             <uri>model://hillstar/stl_files/prop.stl</uri>
           </mesh>
         </geometry>
-      </collision>      
+      </collision>
     </link>
 
     <!-- Joint for the propeller-1 -->
@@ -369,8 +369,8 @@
           <spring_stiffness>0</spring_stiffness>
         </dynamics>
       </axis>
-    </joint>  
-    
+    </joint>
+
     <!-- Motor object for the propeller-1 -->
     <plugin filename="gz-sim-multicopter-motor-model-system" name="gz::sim::systems::MulticopterMotorModel">
       <jointName>rotor_1_joint</jointName>
@@ -438,18 +438,18 @@
       <axis>
         <xyz>0 -1 0</xyz>
         <limit>
-          <lower>-3.1415</lower>
-          <upper>3.1415</upper>
+          <lower>-1.5707</lower>
+          <upper>1.5707</upper>
           <effort>3.5</effort>
           <velocity>6.0</velocity>
         </limit>
         <dynamics>
-          <damping>0.05</damping>
+          <damping>0.2</damping>
           <friction>0.025</friction>
         </dynamics>
       </axis>
-    </joint>  
-    
+    </joint>
+
     <!-- Joint Control for the tilting motor-2 -->
     <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
       <joint_name>tilt_arm_2</joint_name>
@@ -459,7 +459,7 @@
       <i_gain>0.1</i_gain>
       <d_gain>0.3</d_gain>
     </plugin>
-    
+
     <!-- Link for the propeller-2 -->
     <link name = "prop_2">
       <gravity>true</gravity>
@@ -492,7 +492,7 @@
             <uri>model://hillstar/stl_files/prop.stl</uri>
           </mesh>
         </geometry>
-      </collision>      
+      </collision>
     </link>
 
     <!-- Joint for the propeller-2 -->
@@ -506,8 +506,8 @@
           <spring_stiffness>0</spring_stiffness>
         </dynamics>
       </axis>
-    </joint>  
-    
+    </joint>
+
     <!-- Motor object for the propeller-2 -->
     <plugin filename="gz-sim-multicopter-motor-model-system" name="gz::sim::systems::MulticopterMotorModel">
       <jointName>rotor_2_joint</jointName>
@@ -525,7 +525,7 @@
       <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
       <motorType>velocity</motorType>
     </plugin>
-    
+
         <!-- ARM - 3 -->
     <!--  -->
     <!-- The link for individual arm assembly -->
@@ -574,18 +574,18 @@
       <axis>
         <xyz>0 -1 0</xyz>
         <limit>
-          <lower>-3.1415</lower>
-          <upper>3.1415</upper>
+          <lower>-1.5707</lower>
+          <upper>1.5707</upper>
           <effort>3.5</effort>
           <velocity>6.0</velocity>
         </limit>
         <dynamics>
-          <damping>0.05</damping>
+          <damping>0.2</damping>
           <friction>0.025</friction>
         </dynamics>
       </axis>
-    </joint>  
-    
+    </joint>
+
     <!-- Joint Control for the tilting motor-3 -->
     <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
       <joint_name>tilt_arm_3</joint_name>
@@ -595,7 +595,7 @@
       <i_gain>0.1</i_gain>
       <d_gain>0.3</d_gain>
     </plugin>
-    
+
     <!-- Link for the propeller-3 -->
     <link name = "prop_3">
       <gravity>true</gravity>
@@ -628,7 +628,7 @@
             <uri>model://hillstar/stl_files/prop.stl</uri>
           </mesh>
         </geometry>
-      </collision>      
+      </collision>
     </link>
 
     <!-- Joint for the propeller-3 -->
@@ -642,8 +642,8 @@
           <spring_stiffness>0</spring_stiffness>
         </dynamics>
       </axis>
-    </joint>  
-    
+    </joint>
+
     <!-- Motor object for the propeller-3 -->
     <plugin filename="gz-sim-multicopter-motor-model-system" name="gz::sim::systems::MulticopterMotorModel">
       <jointName>rotor_3_joint</jointName>
@@ -668,8 +668,8 @@
       <joint_name>tilt_arm_1</joint_name>
       <joint_name>tilt_arm_2</joint_name>
       <joint_name>tilt_arm_3</joint_name>
-    </plugin>  
+    </plugin>
 
-    
+
   </model>
 </sdf>
