@@ -277,6 +277,28 @@
           </geometry>
           <material><ambient>0.9 0.7 0.05 1</ambient></material>
         </visual>
+        <!-- AprilTag 36h11 id 0. Box objects share the wall's own pitch, and -->
+        <!-- local -X was verified (numerically, against the wall's outward -->
+        <!-- normal) to be the face pointing away from the wall, so the tag -->
+        <!-- mounts flush there facing the approach/camera direction. -->
+        <visual name="tag">
+          <pose>-0.051 0 0 0 0 0</pose>
+          <geometry>
+            <box><size>0.002 0.08 0.08</size></box>
+          </geometry>
+          <material>
+            <ambient>1 1 1 1</ambient>
+            <diffuse>1 1 1 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+            <pbr>
+              <metal>
+                <albedo_map>model://tag_textures/materials/textures/tag_0_toolbox.png</albedo_map>
+                <metalness>0.0</metalness>
+                <roughness>1.0</roughness>
+              </metal>
+            </pbr>
+          </material>
+        </visual>
       </link>
     </model>
     <model name="grasp_object_can">
@@ -304,6 +326,27 @@
             <cylinder><radius>0.033</radius><length>0.12</length></cylinder>
           </geometry>
           <material><ambient>0.8 0.1 0.1 1</ambient></material>
+        </visual>
+        <!-- AprilTag 36h11 id 1. Cylinder objects are pitched so their flat -->
+        <!-- end (not the round side) touches the wall; local +Z was verified -->
+        <!-- to be the end facing away from the wall. -->
+        <visual name="tag">
+          <pose>0 0 0.061 0 0 0</pose>
+          <geometry>
+            <cylinder><radius>0.028</radius><length>0.002</length></cylinder>
+          </geometry>
+          <material>
+            <ambient>1 1 1 1</ambient>
+            <diffuse>1 1 1 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+            <pbr>
+              <metal>
+                <albedo_map>model://tag_textures/materials/textures/tag_1_can.png</albedo_map>
+                <metalness>0.0</metalness>
+                <roughness>1.0</roughness>
+              </metal>
+            </pbr>
+          </material>
         </visual>
       </link>
     </model>
@@ -333,6 +376,25 @@
           </geometry>
           <material><ambient>0.05 0.6 0.55 1</ambient></material>
         </visual>
+        <!-- AprilTag 36h11 id 2. Local +Z verified as the face away from the wall. -->
+        <visual name="tag">
+          <pose>0 0 0.111 0 0 0</pose>
+          <geometry>
+            <cylinder><radius>0.03</radius><length>0.002</length></cylinder>
+          </geometry>
+          <material>
+            <ambient>1 1 1 1</ambient>
+            <diffuse>1 1 1 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+            <pbr>
+              <metal>
+                <albedo_map>model://tag_textures/materials/textures/tag_2_bottle.png</albedo_map>
+                <metalness>0.0</metalness>
+                <roughness>1.0</roughness>
+              </metal>
+            </pbr>
+          </material>
+        </visual>
       </link>
     </model>
     <model name="grasp_object_cube">
@@ -361,6 +423,26 @@
           </geometry>
           <material><ambient>0.3 0.35 0.45 1</ambient></material>
         </visual>
+        <!-- AprilTag 36h11 id 3. Same box convention as the toolbox: local -X -->
+        <!-- verified as the face away from the wall. -->
+        <visual name="tag">
+          <pose>-0.061 0 0 0 0 0</pose>
+          <geometry>
+            <box><size>0.002 0.08 0.08</size></box>
+          </geometry>
+          <material>
+            <ambient>1 1 1 1</ambient>
+            <diffuse>1 1 1 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+            <pbr>
+              <metal>
+                <albedo_map>model://tag_textures/materials/textures/tag_3_cube.png</albedo_map>
+                <metalness>0.0</metalness>
+                <roughness>1.0</roughness>
+              </metal>
+            </pbr>
+          </material>
+        </visual>
       </link>
     </model>
     <model name="grasp_object_cylinder">
@@ -388,6 +470,25 @@
             <cylinder><radius>0.045</radius><length>0.15</length></cylinder>
           </geometry>
           <material><ambient>0.9 0.45 0.05 1</ambient></material>
+        </visual>
+        <!-- AprilTag 36h11 id 4. Local +Z verified as the face away from the wall. -->
+        <visual name="tag">
+          <pose>0 0 0.076 0 0 0</pose>
+          <geometry>
+            <cylinder><radius>0.038</radius><length>0.002</length></cylinder>
+          </geometry>
+          <material>
+            <ambient>1 1 1 1</ambient>
+            <diffuse>1 1 1 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+            <pbr>
+              <metal>
+                <albedo_map>model://tag_textures/materials/textures/tag_4_cylinder.png</albedo_map>
+                <metalness>0.0</metalness>
+                <roughness>1.0</roughness>
+              </metal>
+            </pbr>
+          </material>
         </visual>
       </link>
     </model>

@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <model name="tag_textures">
+    <!-- Placeholder only - this "model" is never spawned. It exists purely so
+         model://tag_textures/materials/textures/tag_N.png resolves via
+         GZ_SIM_RESOURCE_PATH for the AprilTag decals used in slope_wall.sdf. -->
+    <static>true</static>
+    <link name="link"/>
+  </model>
+</sdf>

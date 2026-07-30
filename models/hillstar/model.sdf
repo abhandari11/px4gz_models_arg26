@@ -174,6 +174,35 @@
         <always_on>1</always_on>
         <update_rate>30</update_rate>
       </sensor>
+
+      <!-- Forward/down-looking RGB camera for future AprilTag-based -->
+      <!-- perception. Rigidly mounted under the front of the body (no -->
+      <!-- separate link/joint needed - it never moves relative to base_link), -->
+      <!-- pitched 30 deg down from horizontal so it naturally frames the -->
+      <!-- sloped wall ahead during a level approach. horizontal_fov=110deg -->
+      <!-- with a 4:3 image was sized so the wall's full 5.5m width fits in -->
+      <!-- frame from ~3.9m out (verified by computing the actual wall-corner -->
+      <!-- angles from that standoff) - covering the whole 5.5m-wide wall from -->
+      <!-- only ~1m away would need a ~170+ deg fisheye, which would badly -->
+      <!-- distort the AprilTags right when you need them most accurate. -->
+      <sensor name="camera_sensor" type="camera">
+        <pose>0.1 0 -0.03 0 0.5236 0</pose>
+        <always_on>1</always_on>
+        <update_rate>20</update_rate>
+        <topic>hillstar/camera</topic>
+        <camera>
+          <horizontal_fov>1.91986</horizontal_fov>
+          <image>
+            <width>1280</width>
+            <height>960</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.05</near>
+            <far>50</far>
+          </clip>
+        </camera>
+      </sensor>
     </link>
 
     <!-- ARM - 0 -->
