@@ -19,10 +19,42 @@
           <iyz>0</iyz>
         </inertia>
       </inertial>
-      <collision name='collision_base_link'>
+      <!-- Collision split into the body block + the 2 landing skids -->
+      <!-- separately (not one solid box spanning the full bounding envelope -->
+      <!-- like the original placeholder, and not my first "fix" which just -->
+      <!-- matched the full mesh bounding box either) - a single box filled in -->
+      <!-- the open space between/under the skids where the gripper needs to -->
+      <!-- operate, so anything placed under the UAV hit that solid slab -->
+      <!-- instead of the true legs, making it rest far higher than it should. -->
+      <!-- Verified directly from the mesh: legs are 2 thin skids (not 4), -->
+      <!-- each spanning the full x range at a fixed y band, found by -->
+      <!-- clustering outer-radius (>=0.10), low-z (<0) vertices by angle - -->
+      <!-- skid 1: x[-0.145,0.145] y[-0.179,-0.164] z[-0.210,-0.205]; -->
+      <!-- skid 2: x[-0.145,0.145] y[0.164,0.179] z[-0.210,-0.205]. -->
+      <!-- Body block (central column, radius<0.10 from the stl's own -->
+      <!-- vertices) spans z -0.005..0.09; approximated here as a 0.20x0.20 -->
+      <!-- box (that radius) since it's not the exact body cross-section. -->
+      <collision name="collision_base_link">
+        <pose>0 0 0.0425 0 0 0</pose>
         <geometry>
           <box>
-            <size>0.230 0.230 0.45</size>
+            <size>0.20 0.20 0.095</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="collision_leg_left">
+        <pose>0 -0.1715 -0.2075 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.29 0.015 0.005</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="collision_leg_right">
+        <pose>0 0.1715 -0.2075 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.29 0.015 0.005</size>
           </box>
         </geometry>
       </collision>
@@ -37,6 +69,33 @@
           <ambient>0.2 0.2 0.2 1</ambient>
           <diffuse>0.5 0.5 0.5 1</diffuse>
           <specular>0.25 0.25 0.25 1</specular>
+        </material>
+      </visual>
+
+      <!-- Gripper mount boss: modeled as part of base_link itself (not a -->
+      <!-- separate link+fixed-joint) so the 3 finger joints below can parent -->
+      <!-- directly off base_link, matching the arm/prop joints elsewhere in -->
+      <!-- this file - a revolute joint hanging off a link that is itself -->
+      <!-- fixed-jointed to the root was found to silently not actuate. -->
+      <!-- Mounted flush under the actual body BLOCK (not the leg-inclusive -->
+      <!-- collision envelope above): analyzing the mesh's own vertices -->
+      <!-- (radius < 0.10 from the center axis, i.e. excluding the splayed -->
+      <!-- legs/arm mounts) shows the block itself spans z -0.005..+0.09, so -->
+      <!-- its real bottom is -0.005, not the legs' foot level (-0.21). -->
+      <collision name="collision_gripper_mount">
+        <pose>0 0 -0.015 0 0 0</pose>
+        <geometry>
+          <cylinder><radius>0.035</radius><length>0.02</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="visual_gripper_mount">
+        <pose>0 0 -0.015 0 0 0</pose>
+        <geometry>
+          <cylinder><radius>0.035</radius><length>0.02</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.2 0.2 0.2 1</ambient>
+          <diffuse>0.3 0.3 0.3 1</diffuse>
         </material>
       </visual>
 
@@ -670,6 +729,222 @@
       <joint_name>tilt_arm_3</joint_name>
     </plugin>
 
+    <!-- ===================== Gripper ===================== -->
+    <!-- Lightweight procedural 3-finger gripper (primitives only), rigidly -->
+    <!-- mounted under the body. All 3 finger joints are actuated directly by -->
+    <!-- the custom GripperController system plugin (below), which also owns -->
+    <!-- the grasp/release search-and-attach logic (source: -->
+    <!-- Tools/simulation/gz/plugins/gripper_controller). -->
+    <!-- Finger 0 - mount angle 0 deg -->
+    <link name="finger_0">
+      <pose>0.035 0 -0.025 0 0 0</pose>
+      <gravity>true</gravity>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.01</mass>
+        <inertia>
+          <ixx>2.2e-6</ixx>
+          <iyy>2.2e-6</iyy>
+          <izz>2.5e-7</izz>
+        </inertia>
+      </inertial>
+      <collision name="finger_0_collision">
+        <pose>0 0 -0.035 0 0 0</pose>
+        <geometry>
+          <box><size>0.01 0.015 0.07</size></box>
+        </geometry>
+      </collision>
+      <visual name="visual_finger_0">
+        <pose>0 0 -0.035 0 0 0</pose>
+        <geometry>
+          <box><size>0.01 0.015 0.07</size></box>
+        </geometry>
+        <material>
+          <ambient>0.1 0.2 0.9 1</ambient>
+          <diffuse>0.15 0.25 0.95 1</diffuse>
+        </material>
+      </visual>
+      <sensor name="finger_0_contact_sensor" type="contact">
+        <always_on>1</always_on>
+        <update_rate>100</update_rate>
+        <contact>
+          <collision>finger_0_collision</collision>
+          <topic>/hillstar/gripper/finger_0_contact</topic>
+        </contact>
+      </sensor>
+    </link>
+
+    <joint name="finger_0_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>finger_0</child>
+      <axis>
+        <xyz>0 -1 0</xyz>
+        <limit>
+          <lower>-0.6</lower>
+          <upper>0.6</upper>
+          <effort>0.5</effort>
+          <velocity>3.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.02</damping>
+          <friction>0.005</friction>
+        </dynamics>
+      </axis>
+    </joint>
+
+    <!-- Finger 1 - mount angle 120 deg -->
+    <link name="finger_1">
+      <pose>-0.0175 0.03031 -0.025 0 0 2.0944</pose>
+      <gravity>true</gravity>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.01</mass>
+        <inertia>
+          <ixx>2.2e-6</ixx>
+          <iyy>2.2e-6</iyy>
+          <izz>2.5e-7</izz>
+        </inertia>
+      </inertial>
+      <collision name="finger_1_collision">
+        <pose>0 0 -0.035 0 0 0</pose>
+        <geometry>
+          <box><size>0.01 0.015 0.07</size></box>
+        </geometry>
+      </collision>
+      <visual name="visual_finger_1">
+        <pose>0 0 -0.035 0 0 0</pose>
+        <geometry>
+          <box><size>0.01 0.015 0.07</size></box>
+        </geometry>
+        <material>
+          <ambient>0.1 0.2 0.9 1</ambient>
+          <diffuse>0.15 0.25 0.95 1</diffuse>
+        </material>
+      </visual>
+      <sensor name="finger_1_contact_sensor" type="contact">
+        <always_on>1</always_on>
+        <update_rate>100</update_rate>
+        <contact>
+          <collision>finger_1_collision</collision>
+          <topic>/hillstar/gripper/finger_1_contact</topic>
+        </contact>
+      </sensor>
+    </link>
+
+    <joint name="finger_1_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>finger_1</child>
+      <axis>
+        <xyz>0 -1 0</xyz>
+        <limit>
+          <lower>-0.6</lower>
+          <upper>0.6</upper>
+          <effort>0.5</effort>
+          <velocity>3.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.02</damping>
+          <friction>0.005</friction>
+        </dynamics>
+      </axis>
+    </joint>
+
+    <!-- Finger 2 - mount angle 240 deg -->
+    <link name="finger_2">
+      <pose>-0.0175 -0.03031 -0.025 0 0 4.1888</pose>
+      <gravity>true</gravity>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.01</mass>
+        <inertia>
+          <ixx>2.2e-6</ixx>
+          <iyy>2.2e-6</iyy>
+          <izz>2.5e-7</izz>
+        </inertia>
+      </inertial>
+      <collision name="finger_2_collision">
+        <pose>0 0 -0.035 0 0 0</pose>
+        <geometry>
+          <box><size>0.01 0.015 0.07</size></box>
+        </geometry>
+      </collision>
+      <visual name="visual_finger_2">
+        <pose>0 0 -0.035 0 0 0</pose>
+        <geometry>
+          <box><size>0.01 0.015 0.07</size></box>
+        </geometry>
+        <material>
+          <ambient>0.1 0.2 0.9 1</ambient>
+          <diffuse>0.15 0.25 0.95 1</diffuse>
+        </material>
+      </visual>
+      <sensor name="finger_2_contact_sensor" type="contact">
+        <always_on>1</always_on>
+        <update_rate>100</update_rate>
+        <contact>
+          <collision>finger_2_collision</collision>
+          <topic>/hillstar/gripper/finger_2_contact</topic>
+        </contact>
+      </sensor>
+    </link>
+
+    <joint name="finger_2_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>finger_2</child>
+      <axis>
+        <xyz>0 -1 0</xyz>
+        <limit>
+          <lower>-0.6</lower>
+          <upper>0.6</upper>
+          <effort>0.5</effort>
+          <velocity>3.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.02</damping>
+          <friction>0.005</friction>
+        </dynamics>
+      </axis>
+    </joint>
+
+    <!-- Custom grasp controller: single open/close command -> finger motion, -->
+    <!-- dynamic object search/attach on close, detach on open, state feedback. -->
+    <!-- Drives the 3 finger joints directly via PD force control (public -->
+    <!-- gz::sim::Joint API) - the stock JointPositionController system was -->
+    <!-- found not to reliably actuate these joints in every launch -->
+    <!-- environment, so this plugin owns finger actuation end-to-end. -->
+    <!-- All link/joint/topic names below are plugin parameters so a future CAD -->
+    <!-- gripper can be swapped in by editing this block only, no C++ changes. -->
+    <plugin filename="GripperController" name="gripper_controller::GripperController">
+      <gripper_base_link>base_link</gripper_base_link>
+      <finger_joint>finger_0_joint</finger_joint>
+      <finger_joint>finger_1_joint</finger_joint>
+      <finger_joint>finger_2_joint</finger_joint>
+      <finger_collision>finger_0_collision</finger_collision>
+      <finger_collision>finger_1_collision</finger_collision>
+      <finger_collision>finger_2_collision</finger_collision>
+      <finger_contact_topic>/hillstar/gripper/finger_0_contact</finger_contact_topic>
+      <finger_contact_topic>/hillstar/gripper/finger_1_contact</finger_contact_topic>
+      <finger_contact_topic>/hillstar/gripper/finger_2_contact</finger_contact_topic>
+      <!-- open = fingers spread outward, ready to grab; closed = fingers -->
+      <!-- curled toward center, object grasped (flipped from the previous -->
+      <!-- sign mapping per observed GUI behavior); 20 deg from vertical. -->
+      <open_position>0.34907</open_position>
+      <closed_position>-0.34907</closed_position>
+      <finger_p_gain>1.5</finger_p_gain>
+      <finger_d_gain>0.02</finger_d_gain>
+      <finger_effort_limit>0.5</finger_effort_limit>
+      <command_topic>/hillstar/gripper_cmd</command_topic>
+      <state_topic>/hillstar/gripper_state</state_topic>
+      <grasp_radius>0.08</grasp_radius>
+      <!-- gripper_base_link is base_link (the whole vehicle body), whose own -->
+      <!-- origin sits ~0.1-0.2m away from where the fingers actually make -->
+      <!-- contact - without this offset the grasp-radius check measures from -->
+      <!-- the body center and never finds anything in range. -0.094 is the -->
+      <!-- measured world-Z of real finger/object contact, relative to -->
+      <!-- base_link's own origin. -->
+      <grasp_center_offset>0 0 -0.1</grasp_center_offset>
+      <vehicle_model_name>hillstar</vehicle_model_name>
+    </plugin>
 
   </model>
 </sdf>
