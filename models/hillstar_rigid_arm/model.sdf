@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf version='1.9'>
+  <model name='hillstar_rigid_arm'>
+    <!-- Composition, not a hand-authored vehicle: hillstar_base supplies the
+         frame/rotors/sensors, rigid_arm_3link supplies the manipulator. The
+         one piece that can't live inside either included model is the joint
+         that connects them - sdformat validates a merge='true' include's
+         joints against its own document before splicing it in, so a joint
+         referencing a link from the *other* include has to be declared here,
+         in the file that has already merged both sides in (same pattern
+         x500_mono_cam/x500_depth use for their own CameraJoint). To fly
+         Hillstar with a different attachment, add a sibling composed model
+         the same way: two <include merge='true'> lines plus its own glue
+         joint. -->
+    <include merge='true'>
+      <uri>model://hillstar</uri>
+    </include>
+    <include merge='true'>
+      <uri>model://rigid_arm_3link</uri>
+    </include>
+
+    <!-- Glue joint: mounts the manipulator's first link onto the vehicle
+         body, at the same boss the gripper attachment bolts to
+         (hillstar_base's collision_gripper_mount/visual_gripper_mount, z
+         -0.015 in base_link's frame). Fixed, not revolute: this first
+         segment doesn't need its own actuated DOF - rigid_arm_joint_2/3
+         (declared inside rigid_arm_3link itself) already give the
+         manipulator 2 actuated joints, and a fixed weld here is simpler and
+         guaranteed rigid instead of relying on a motor to hold position 0
+         under load. -->
+    <joint name="rigid_arm_joint_1" type="fixed">
+      <parent>base_link</parent>
+      <child>rigid_arm_3link/link_1</child>
+    </joint>
+  </model>
+</sdf>

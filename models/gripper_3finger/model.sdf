@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf version='1.9'>
+  <!--
+    Self-contained finger set for the 3-finger gripper attachment. See
+    model.config for why the mount joints and the GripperController plugin
+    live in the composing file instead of here.
+  -->
+  <model name='gripper_3finger'>
+    <!-- hillstar_base's own <model> carries a <pose>0 0 0.30 0 0 0</pose>
+         that a merge='true' include bakes onto base_link's effective
+         position, but NOT onto any other model merged alongside it - so
+         without a matching pose here, the finger poses below (authored
+         relative to base_link, e.g. z=-0.025 meaning "0.025m under the
+         mount boss") would actually land 0.3m too low once merged into a
+         vehicle, well below the landing legs. Mirroring the same offset
+         here keeps this module's own poses correctly base_link-relative
+         regardless of what it's composed into. -->
+    <pose>0 0 0.30 0 0 0</pose>
+    <self_collide>false</self_collide>
+    <static>false</static>
+
+    <!-- Finger 0 - mount angle 0 deg -->
+    <link name="gripper_3finger/finger_0">
+      <pose>0.035 0 -0.025 0 0 0</pose>
+      <gravity>true</gravity>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.01</mass>
+        <inertia>
+          <ixx>2.2e-6</ixx>
+          <iyy>2.2e-6</iyy>
+          <izz>2.5e-7</izz>
+        </inertia>
+      </inertial>
+      <collision name="gripper_3finger/finger_0_collision">
+        <pose>0 0 -0.035 0 0 0</pose>
+        <geometry>
+          <box><size>0.01 0.015 0.07</size></box>
+        </geometry>
+      </collision>
+      <visual name="gripper_3finger/finger_0_visual">
+        <pose>0 0 -0.035 0 0 0</pose>
+        <geometry>
+          <box><size>0.01 0.015 0.07</size></box>
+        </geometry>
+        <material>
+          <ambient>0.1 0.2 0.9 1</ambient>
+          <diffuse>0.15 0.25 0.95 1</diffuse>
+        </material>
+      </visual>
+      <sensor name="gripper_3finger/finger_0_contact_sensor" type="contact">
+        <always_on>1</always_on>
+        <update_rate>100</update_rate>
+        <contact>
+          <collision>gripper_3finger/finger_0_collision</collision>
+          <topic>/gripper_3finger/finger_0_contact</topic>
+        </contact>
+      </sensor>
+    </link>
+
+    <!-- Finger 1 - mount angle 120 deg -->
+    <link name="gripper_3finger/finger_1">
+      <pose>-0.0175 0.03031 -0.025 0 0 2.0944</pose>
+      <gravity>true</gravity>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.01</mass>
+        <inertia>
+          <ixx>2.2e-6</ixx>
+          <iyy>2.2e-6</iyy>
+          <izz>2.5e-7</izz>
+        </inertia>
+      </inertial>
+      <collision name="gripper_3finger/finger_1_collision">
+        <pose>0 0 -0.035 0 0 0</pose>
+        <geometry>
+          <box><size>0.01 0.015 0.07</size></box>
+        </geometry>
+      </collision>
+      <visual name="gripper_3finger/finger_1_visual">
+        <pose>0 0 -0.035 0 0 0</pose>
+        <geometry>
+          <box><size>0.01 0.015 0.07</size></box>
+        </geometry>
+        <material>
+          <ambient>0.1 0.2 0.9 1</ambient>
+          <diffuse>0.15 0.25 0.95 1</diffuse>
+        </material>
+      </visual>
+      <sensor name="gripper_3finger/finger_1_contact_sensor" type="contact">
+        <always_on>1</always_on>
+        <update_rate>100</update_rate>
+        <contact>
+          <collision>gripper_3finger/finger_1_collision</collision>
+          <topic>/gripper_3finger/finger_1_contact</topic>
+        </contact>
+      </sensor>
+    </link>
+
+    <!-- Finger 2 - mount angle 240 deg -->
+    <link name="gripper_3finger/finger_2">
+      <pose>-0.0175 -0.03031 -0.025 0 0 4.1888</pose>
+      <gravity>true</gravity>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.01</mass>
+        <inertia>
+          <ixx>2.2e-6</ixx>
+          <iyy>2.2e-6</iyy>
+          <izz>2.5e-7</izz>
+        </inertia>
+      </inertial>
+      <collision name="gripper_3finger/finger_2_collision">
+        <pose>0 0 -0.035 0 0 0</pose>
+        <geometry>
+          <box><size>0.01 0.015 0.07</size></box>
+        </geometry>
+      </collision>
+      <visual name="gripper_3finger/finger_2_visual">
+        <pose>0 0 -0.035 0 0 0</pose>
+        <geometry>
+          <box><size>0.01 0.015 0.07</size></box>
+        </geometry>
+        <material>
+          <ambient>0.1 0.2 0.9 1</ambient>
+          <diffuse>0.15 0.25 0.95 1</diffuse>
+        </material>
+      </visual>
+      <sensor name="gripper_3finger/finger_2_contact_sensor" type="contact">
+        <always_on>1</always_on>
+        <update_rate>100</update_rate>
+        <contact>
+          <collision>gripper_3finger/finger_2_collision</collision>
+          <topic>/gripper_3finger/finger_2_contact</topic>
+        </contact>
+      </sensor>
+    </link>
+
+  </model>
+</sdf>

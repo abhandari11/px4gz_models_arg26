@@ -8,7 +8,10 @@
 #include <gz/sim/Joint.hh>
 #include <gz/sim/Link.hh>
 #include <gz/sim/Util.hh>
+#include <gz/sim/components/AngularVelocityCmd.hh>
+#include <gz/sim/components/LinearVelocityCmd.hh>
 #include <gz/sim/components/Name.hh>
+#include <gz/sim/components/PoseCmd.hh>
 #include <gz/sim/components/Static.hh>
 
 #include <gz/msgs/stringmsg.pb.h>
@@ -258,6 +261,30 @@ void GripperController::Release(gz::sim::EntityComponentManager &_ecm)
     gzmsg << "GripperController: released [" << this->attachedObjectName
           << "]" << std::endl;
     gz::sim::Model(this->attachedObject).SetCollisionEnabled(_ecm, true);
+
+    // PreUpdate's pose-lock called SetWorldPoseCmd() on the model and
+    // SetLinearVelocity()/SetAngularVelocity() on its canonical link every
+    // tick while attached. Per gz-sim's own Physics system
+    // (UpdatePhysics()/UpdateSim()): a WorldPoseCmd component is re-applied
+    // every tick for as long as it exists and is only removed one iteration
+    // after the last tick it was set on - harmless once we simply stop
+    // setting it. LinearVelocityCmd/AngularVelocityCmd are different: once
+    // created, the component itself is never removed, only its value is
+    // reset to zero after being applied each tick - so it keeps forcing the
+    // link's velocity towards (0,0,0) on every subsequent physics update
+    // forever, silently cancelling gravity's effect on it, even long after
+    // this plugin stops touching it. That's why the released object was
+    // observed floating motionless instead of falling. Explicitly removing
+    // all three commanded-state components hands full, unencumbered control
+    // back to physics.
+    gz::sim::Model releasedModel(this->attachedObject);
+    gz::sim::Entity releasedLink = releasedModel.CanonicalLink(_ecm);
+    _ecm.RemoveComponent<gz::sim::components::WorldPoseCmd>(
+        this->attachedObject);
+    _ecm.RemoveComponent<gz::sim::components::LinearVelocityCmd>(
+        releasedLink);
+    _ecm.RemoveComponent<gz::sim::components::AngularVelocityCmd>(
+        releasedLink);
   }
   this->attached = false;
   this->attachedObject = gz::sim::kNullEntity;

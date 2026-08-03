@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf version='1.9'>
+  <model name='hillstar_gripper'>
+    <!-- Composition: hillstar_base supplies the frame/rotors/sensors,
+         gripper_3finger supplies the 3 finger links. Everything that
+         references something *outside* gripper_3finger's own document has
+         to live here instead of inside that module (same reasoning as
+         hillstar_rigid_arm's glue joint):
+           - all 3 finger joints parent onto "base_link" (foreign link,
+             fails sdformat's per-document frame-graph check if declared
+             inside gripper_3finger - verified the same way as the rigid
+             arm's shoulder joint);
+           - GripperController's <vehicle_model_name> must equal this
+             composed model's own name ("hillstar_gripper"), which can't be
+             hardcoded inside a module meant to be reusable as-is. Getting
+             this wrong wouldn't error at load time - it would silently
+             break the "don't grasp myself" check in
+             GripperController::TryGrasp(), since that check simply
+             wouldn't match any real spawned model name. -->
+    <include merge='true'>
+      <uri>model://hillstar</uri>
+    </include>
+    <include merge='true'>
+      <uri>model://gripper_3finger</uri>
+    </include>
+
+    <!-- Glue joints: mount each finger onto the vehicle body. Axis/limit/
+         dynamics are unchanged from the original monolithic hillstar. -->
+    <joint name="finger_0_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>gripper_3finger/finger_0</child>
+      <axis>
+        <xyz>0 -1 0</xyz>
+        <limit>
+          <lower>-0.6</lower>
+          <upper>0.6</upper>
+          <effort>0.5</effort>
+          <velocity>3.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.02</damping>
+          <friction>0.005</friction>
+        </dynamics>
+      </axis>
+    </joint>
+
+    <joint name="finger_1_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>gripper_3finger/finger_1</child>
+      <axis>
+        <xyz>0 -1 0</xyz>
+        <limit>
+          <lower>-0.6</lower>
+          <upper>0.6</upper>
+          <effort>0.5</effort>
+          <velocity>3.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.02</damping>
+          <friction>0.005</friction>
+        </dynamics>
+      </axis>
+    </joint>
+
+    <joint name="finger_2_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>gripper_3finger/finger_2</child>
+      <axis>
+        <xyz>0 -1 0</xyz>
+        <limit>
+          <lower>-0.6</lower>
+          <upper>0.6</upper>
+          <effort>0.5</effort>
+          <velocity>3.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.02</damping>
+          <friction>0.005</friction>
+        </dynamics>
+      </axis>
+    </joint>
+
+    <!-- Custom grasp controller: single open/close command -> finger motion,
+         dynamic object search/attach on close, detach on open, state
+         feedback. Parameters copied unchanged from the original monolithic
+         hillstar/model.sdf except: finger_collision/finger_contact_topic
+         now point at gripper_3finger's prefixed names, and
+         vehicle_model_name is "hillstar_gripper" (this model's own name,
+         not "hillstar" - see the composition comment above for why that
+         matters). command_topic/state_topic are intentionally still
+         "/hillstar/..." (not attachment- or model-scoped) so this drop-in
+         replaces the original hillstar model's gripper interface exactly -
+         hillstar_px4's gripper_client.py needs no changes either way. -->
+    <plugin filename="GripperController" name="gripper_controller::GripperController">
+      <gripper_base_link>base_link</gripper_base_link>
+      <finger_joint>finger_0_joint</finger_joint>
+      <finger_joint>finger_1_joint</finger_joint>
+      <finger_joint>finger_2_joint</finger_joint>
+      <finger_collision>gripper_3finger/finger_0_collision</finger_collision>
+      <finger_collision>gripper_3finger/finger_1_collision</finger_collision>
+      <finger_collision>gripper_3finger/finger_2_collision</finger_collision>
+      <finger_contact_topic>/gripper_3finger/finger_0_contact</finger_contact_topic>
+      <finger_contact_topic>/gripper_3finger/finger_1_contact</finger_contact_topic>
+      <finger_contact_topic>/gripper_3finger/finger_2_contact</finger_contact_topic>
+      <!-- open = fingers spread outward, ready to grab; closed = fingers
+           curled toward center, object grasped; 20 deg from vertical. -->
+      <open_position>0.34907</open_position>
+      <closed_position>-0.34907</closed_position>
+      <finger_p_gain>1.5</finger_p_gain>
+      <finger_d_gain>0.02</finger_d_gain>
+      <finger_effort_limit>0.5</finger_effort_limit>
+      <command_topic>/hillstar/gripper_cmd</command_topic>
+      <state_topic>/hillstar/gripper_state</state_topic>
+      <grasp_radius>0.08</grasp_radius>
+      <!-- measured world-Z offset of real finger/object contact, relative
+           to base_link's own origin (unchanged from the original file). -->
+      <grasp_center_offset>0 0 -0.1</grasp_center_offset>
+      <vehicle_model_name>hillstar_gripper</vehicle_model_name>
+    </plugin>
+  </model>
+</sdf>
