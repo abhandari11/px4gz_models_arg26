@@ -243,14 +243,6 @@
         </visual>
       </link>
     </model>
-    <!-- Graspable objects resting flush against the ramp's sloped face, pinned by -->
-    <!-- friction (tan(18°) ≈ 0.32, well under mu=1.5). Box objects share the wall's -->
-    <!-- own pitch (1.2566 rad) so a full face sits flush against the slope; -->
-    <!-- cylinder objects are pitched 90° further (-0.3142 rad) so their flat end -->
-    <!-- (not their round side) touches the slope, otherwise they roll straight off. -->
-    <!-- Each position is wall_center + (half wall thickness + half object -->
-    <!-- thickness) along the slope's outward normal, plus a lateral (world Y) and -->
-    <!-- up-slope offset to spread the 5 objects across the enlarged wall. -->
     <model name="grasp_object_toolbox">
       <pose>1.487 -1.8 0.881 0 1.2566 0</pose>
       <link name="object_link">
@@ -277,10 +269,6 @@
           </geometry>
           <material><ambient>0.9 0.7 0.05 1</ambient></material>
         </visual>
-        <!-- AprilTag 36h11 id 0. Box objects share the wall's own pitch, and -->
-        <!-- local -X was verified (numerically, against the wall's outward -->
-        <!-- normal) to be the face pointing away from the wall, so the tag -->
-        <!-- mounts flush there facing the approach/camera direction. -->
         <visual name="tag">
           <pose>-0.051 0 0 0 0 0</pose>
           <geometry>
@@ -327,9 +315,6 @@
           </geometry>
           <material><ambient>0.8 0.1 0.1 1</ambient></material>
         </visual>
-        <!-- AprilTag 36h11 id 1. Cylinder objects are pitched so their flat -->
-        <!-- end (not the round side) touches the wall; local +Z was verified -->
-        <!-- to be the end facing away from the wall. -->
         <visual name="tag">
           <pose>0 0 0.061 0 0 0</pose>
           <geometry>
@@ -518,5 +503,12 @@
       <longitude_deg> 8.546163739800146</longitude_deg>
       <elevation>0</elevation>
     </spherical_coordinates>
+    <plugin filename="gz-sim-pose-publisher-system" name="gz::sim::systems::PosePublisher">
+      <publish_link_pose>true</publish_link_pose>
+      <publish_model_pose>true</publish_model_pose>
+      <use_pose_vector_msg>true</use_pose_vector_msg>
+      <static_publisher>true</static_publisher>
+      <static_update_frequency>1</static_update_frequency>
+    </plugin>
   </world>
 </sdf>

@@ -82,15 +82,12 @@
 
     <!-- Custom grasp controller: single open/close command -> finger motion,
          dynamic object search/attach on close, detach on open, state
-         feedback. Parameters copied unchanged from the original monolithic
-         hillstar/model.sdf except: finger_collision/finger_contact_topic
-         now point at gripper_3finger's prefixed names, and
-         vehicle_model_name is "hillstar_gripper" (this model's own name,
-         not "hillstar" - see the composition comment above for why that
-         matters). command_topic/state_topic are intentionally still
-         "/hillstar/..." (not attachment- or model-scoped) so this drop-in
-         replaces the original hillstar model's gripper interface exactly -
-         hillstar_px4's gripper_client.py needs no changes either way. -->
+         feedback.
+         Conditions for a succesful grasp:
+         1. the object isnt the vehicle itself and isnt static
+         2. its canonical-link position is within grasp_radius of the computed grasp_center (base_link + grasp_center_offset)
+         3. its in contact with at least one finger's collison box
+         -->
     <plugin filename="GripperController" name="gripper_controller::GripperController">
       <gripper_base_link>base_link</gripper_base_link>
       <finger_joint>finger_0_joint</finger_joint>
@@ -103,18 +100,19 @@
       <finger_contact_topic>/gripper_3finger/finger_1_contact</finger_contact_topic>
       <finger_contact_topic>/gripper_3finger/finger_2_contact</finger_contact_topic>
       <!-- open = fingers spread outward, ready to grab; closed = fingers
-           curled toward center, object grasped; 20 deg from vertical. -->
-      <open_position>0.34907</open_position>
-      <closed_position>-0.34907</closed_position>
+           curled toward center, object grasped; 30 deg from vertical. -->
+      <open_position>0.5235</open_position>
+      <closed_position>-0.5235</closed_position>
       <finger_p_gain>1.5</finger_p_gain>
       <finger_d_gain>0.02</finger_d_gain>
       <finger_effort_limit>0.5</finger_effort_limit>
       <command_topic>/hillstar/gripper_cmd</command_topic>
       <state_topic>/hillstar/gripper_state</state_topic>
       <grasp_radius>0.08</grasp_radius>
-      <!-- measured world-Z offset of real finger/object contact, relative
-           to base_link's own origin (unchanged from the original file). -->
-      <grasp_center_offset>0 0 -0.1</grasp_center_offset>
+      <!-- world-Z offset of the gripper's capture point, relative to
+           base_link's own origin. 7.2 cm below frame base
+           Gazebo frame is Z-up -->
+      <grasp_center_offset>0 0 -0.072</grasp_center_offset>
       <vehicle_model_name>hillstar_gripper</vehicle_model_name>
     </plugin>
   </model>

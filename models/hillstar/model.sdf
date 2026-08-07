@@ -19,21 +19,6 @@
           <iyz>0</iyz>
         </inertia>
       </inertial>
-      <!-- Collision split into the body block + the 2 landing skids -->
-      <!-- separately (not one solid box spanning the full bounding envelope -->
-      <!-- like the original placeholder, and not my first "fix" which just -->
-      <!-- matched the full mesh bounding box either) - a single box filled in -->
-      <!-- the open space between/under the skids where an attachment needs -->
-      <!-- to operate, so anything placed under the UAV hit that solid slab -->
-      <!-- instead of the true legs, making it rest far higher than it should. -->
-      <!-- Verified directly from the mesh: legs are 2 thin skids (not 4), -->
-      <!-- each spanning the full x range at a fixed y band, found by -->
-      <!-- clustering outer-radius (>=0.10), low-z (<0) vertices by angle - -->
-      <!-- skid 1: x[-0.145,0.145] y[-0.179,-0.164] z[-0.210,-0.205]; -->
-      <!-- skid 2: x[-0.145,0.145] y[0.164,0.179] z[-0.210,-0.205]. -->
-      <!-- Body block (central column, radius<0.10 from the stl's own -->
-      <!-- vertices) spans z -0.005..0.09; approximated here as a 0.20x0.20 -->
-      <!-- box (that radius) since it's not the exact body cross-section. -->
       <collision name="collision_base_link">
         <pose>0 0 0.0425 0 0 0</pose>
         <geometry>
@@ -71,20 +56,6 @@
           <specular>0.25 0.25 0.25 1</specular>
         </material>
       </visual>
-
-      <!-- Attachment mount boss: modeled as part of base_link itself (not a -->
-      <!-- separate link+fixed-joint) so an attachment's joints (gripper, -->
-      <!-- manipulator, etc.) can parent directly off base_link, matching the -->
-      <!-- arm/prop joints elsewhere in this file - a revolute joint hanging -->
-      <!-- off a link that is itself fixed-jointed to the root was found to -->
-      <!-- silently not actuate. This boss is the shared physical mounting -->
-      <!-- point every attachment model (see hillstar_gripper, -->
-      <!-- hillstar_rigid_arm) bolts its first joint to. -->
-      <!-- Mounted flush under the actual body BLOCK (not the leg-inclusive -->
-      <!-- collision envelope above): analyzing the mesh's own vertices -->
-      <!-- (radius < 0.10 from the center axis, i.e. excluding the splayed -->
-      <!-- legs/arm mounts) shows the block itself spans z -0.005..+0.09, so -->
-      <!-- its real bottom is -0.005, not the legs' foot level (-0.21). -->
       <collision name="collision_gripper_mount">
         <pose>0 0 -0.015 0 0 0</pose>
         <geometry>
@@ -183,11 +154,7 @@
       <!-- separate link/joint needed - it never moves relative to base_link), -->
       <!-- pitched 30 deg down from horizontal so it naturally frames the -->
       <!-- sloped wall ahead during a level approach. horizontal_fov=110deg -->
-      <!-- with a 4:3 image was sized so the wall's full 5.5m width fits in -->
-      <!-- frame from ~3.9m out (verified by computing the actual wall-corner -->
-      <!-- angles from that standoff) - covering the whole 5.5m-wide wall from -->
-      <!-- only ~1m away would need a ~170+ deg fisheye, which would badly -->
-      <!-- distort the AprilTags right when you need them most accurate. -->
+      <!-- with a 4:3 image -->
       <sensor name="camera_sensor" type="camera">
         <pose>0.1 0 -0.03 0 0.5236 0</pose>
         <always_on>1</always_on>
@@ -759,6 +726,12 @@
       <joint_name>tilt_arm_1</joint_name>
       <joint_name>tilt_arm_2</joint_name>
       <joint_name>tilt_arm_3</joint_name>
+    </plugin>
+
+    <plugin filename="gz-sim-odometry-publisher-system" name="gz::sim::systems::OdometryPublisher">
+      <dimensions>3</dimensions>
+      <odom_frame>odom</odom_frame>
+      <robot_base_frame>base_link</robot_base_frame>
     </plugin>
 
   </model>

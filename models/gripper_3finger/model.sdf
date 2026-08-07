@@ -33,15 +33,15 @@
         </inertia>
       </inertial>
       <collision name="gripper_3finger/finger_0_collision">
-        <pose>0 0 -0.035 0 0 0</pose>
+        <pose>0 0 -0.055 0 0 0</pose>
         <geometry>
-          <box><size>0.01 0.015 0.07</size></box>
+          <box><size>0.01 0.015 0.11</size></box>
         </geometry>
       </collision>
       <visual name="gripper_3finger/finger_0_visual">
-        <pose>0 0 -0.035 0 0 0</pose>
+        <pose>0 0 -0.055 0 0 0</pose>
         <geometry>
-          <box><size>0.01 0.015 0.07</size></box>
+          <box><size>0.01 0.015 0.11</size></box>
         </geometry>
         <material>
           <ambient>0.1 0.2 0.9 1</ambient>
@@ -72,15 +72,15 @@
         </inertia>
       </inertial>
       <collision name="gripper_3finger/finger_1_collision">
-        <pose>0 0 -0.035 0 0 0</pose>
+        <pose>0 0 -0.055 0 0 0</pose>
         <geometry>
-          <box><size>0.01 0.015 0.07</size></box>
+          <box><size>0.01 0.015 0.11</size></box>
         </geometry>
       </collision>
       <visual name="gripper_3finger/finger_1_visual">
-        <pose>0 0 -0.035 0 0 0</pose>
+        <pose>0 0 -0.055 0 0 0</pose>
         <geometry>
-          <box><size>0.01 0.015 0.07</size></box>
+          <box><size>0.01 0.015 0.11</size></box>
         </geometry>
         <material>
           <ambient>0.1 0.2 0.9 1</ambient>
@@ -111,15 +111,15 @@
         </inertia>
       </inertial>
       <collision name="gripper_3finger/finger_2_collision">
-        <pose>0 0 -0.035 0 0 0</pose>
+        <pose>0 0 -0.055 0 0 0</pose>
         <geometry>
-          <box><size>0.01 0.015 0.07</size></box>
+          <box><size>0.01 0.015 0.11</size></box>
         </geometry>
       </collision>
       <visual name="gripper_3finger/finger_2_visual">
-        <pose>0 0 -0.035 0 0 0</pose>
+        <pose>0 0 -0.055 0 0 0</pose>
         <geometry>
-          <box><size>0.01 0.015 0.07</size></box>
+          <box><size>0.01 0.015 0.11</size></box>
         </geometry>
         <material>
           <ambient>0.1 0.2 0.9 1</ambient>
