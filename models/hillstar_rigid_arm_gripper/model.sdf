@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf version='1.9'>
+  <model name='hillstar_rigid_arm_gripper'>
+    <!-- Composition of three modules: hillstar_base (frame/rotors/sensors),
+         rigid_arm_3link (2-DOF manipulator welded to base_link, see
+         hillstar_rigid_arm/model.sdf), and gripper_3finger (mounted here at
+         the arm's own tip, rigid_arm_3link/link_3, instead of at base_link
+         the way hillstar_gripper does it). Everything that references a
+         link from a *different* include has to live in this file rather
+         than inside any one module - same reasoning as hillstar_rigid_arm's
+         and hillstar_gripper's own glue joints. -->
+    <include merge='true'>
+      <uri>model://hillstar</uri>
+    </include>
+    <include merge='true'>
+      <uri>model://rigid_arm_3link</uri>
+    </include>
+
+    <!-- Shoulder glue joint: welds the manipulator's first link onto the
+         vehicle body, at the same boss the gripper attachment bolts to
+         directly in hillstar_gripper (see hillstar_rigid_arm/model.sdf for
+         the full rationale - identical here). Revolute, same as joint_2/3
+         and driven by rigid_arm_3link's own JointTrajectoryController/
+         JointStatePublisher plugins - see rigid_arm_3link/model.sdf's
+         header comment for why a plugin declared in one module can drive a
+         joint declared in this composing file. -->
+    <joint name="rigid_arm_joint_1" type="revolute">
+      <parent>base_link</parent>
+      <child>rigid_arm_3link/link_1</child>
+      <axis>
+        <xyz>0 -1 0</xyz>
+        <limit>
+          <lower>-2.0944</lower>
+          <upper>2.0944</upper>
+          <effort>0.6</effort>
+          <velocity>3.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.05</damping>
+          <friction>0.01</friction>
+        </dynamics>
+      </axis>
+    </joint>
+
+    <!-- gripper_3finger (fingers + palm base) is mounted at the tip of
+         rigid_arm_3link/link_3 instead of base_link. Overriding the
+         include's own <pose>, relative to link_3, replaces gripper_3finger's
+         internal <pose>0 0 0.30 0 0 0</pose> (which exists only to
+         compensate for hillstar's +0.30 model offset when mounted straight
+         on base_link - not needed here since we're posing relative to
+         link_3 directly, not the model root). Translation (0,0,-0.18) is
+         link_3's own rod tip in link_3's local frame: link_3's cylinder runs
+         from its origin (0,0,0) to (0,0,-0.18) locally (rod length 0.18m,
+         see rigid_arm_3link's own comments for the underlying pitch-90-
+         degree rest-pose convention). No extra rotation is applied, so
+         gripper_3finger's local -Z (the direction its fingers hang/reach
+         in) lines up with link_3's local -Z - i.e. the fingers reach
+         further out, continuing the same direction the arm already extends
+         in, rather than sideways or back on itself. -->
+    <include merge='true'>
+      <uri>model://gripper_3finger</uri>
+      <pose relative_to='rigid_arm_3link/link_3'>0 0 -0.18 0 0 0</pose>
+    </include>
+
+    <!-- Glue joint: welds the palm base onto the arm's tip link, same as
+         each finger below. Fixed - it's a static connector between the arm
+         and the finger set, not an actuated part. -->
+    <joint name="palm_joint" type="fixed">
+      <parent>rigid_arm_3link/link_3</parent>
+      <child>gripper_3finger/palm</child>
+    </joint>
+
+    <!-- Finger glue joints: mount each finger onto the arm's tip link
+         instead of base_link (the only difference from hillstar_gripper's
+         equivalent joints). Axis/limit/dynamics unchanged. -->
+    <joint name="finger_0_joint" type="revolute">
+      <parent>rigid_arm_3link/link_3</parent>
+      <child>gripper_3finger/finger_0</child>
+      <axis>
+        <xyz>0 -1 0</xyz>
+        <limit>
+          <lower>-0.6</lower>
+          <upper>0.6</upper>
+          <effort>0.5</effort>
+          <velocity>3.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.02</damping>
+          <friction>0.005</friction>
+        </dynamics>
+      </axis>
+    </joint>
+
+    <joint name="finger_1_joint" type="revolute">
+      <parent>rigid_arm_3link/link_3</parent>
+      <child>gripper_3finger/finger_1</child>
+      <axis>
+        <xyz>0 -1 0</xyz>
+        <limit>
+          <lower>-0.6</lower>
+          <upper>0.6</upper>
+          <effort>0.5</effort>
+          <velocity>3.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.02</damping>
+          <friction>0.005</friction>
+        </dynamics>
+      </axis>
+    </joint>
+
+    <joint name="finger_2_joint" type="revolute">
+      <parent>rigid_arm_3link/link_3</parent>
+      <child>gripper_3finger/finger_2</child>
+      <axis>
+        <xyz>0 -1 0</xyz>
+        <limit>
+          <lower>-0.6</lower>
+          <upper>0.6</upper>
+          <effort>0.5</effort>
+          <velocity>3.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.02</damping>
+          <friction>0.005</friction>
+        </dynamics>
+      </axis>
+    </joint>
+
+    <!-- Custom grasp controller - identical logic/topics to hillstar_gripper,
+         just re-anchored to the arm's tip link instead of base_link:
+           - gripper_base_link is rigid_arm_3link/link_3 (the fingers' actual
+             parent now), so TryGrasp()'s world-pose lookups and Attach()'s
+             pose-lock track the moving arm tip, not the fixed vehicle body.
+           - grasp_center_offset is expressed in link_3's own local frame:
+             -0.18 to reach link_3's rod tip (matching the include pose
+             above) plus -0.072 for the same finger-tip reach hillstar_gripper
+             uses relative to its mount point, giving -0.252 total. -->
+    <plugin filename="GripperController" name="gripper_controller::GripperController">
+      <gripper_base_link>rigid_arm_3link/link_3</gripper_base_link>
+      <finger_joint>finger_0_joint</finger_joint>
+      <finger_joint>finger_1_joint</finger_joint>
+      <finger_joint>finger_2_joint</finger_joint>
+      <finger_collision>gripper_3finger/finger_0_collision</finger_collision>
+      <finger_collision>gripper_3finger/finger_1_collision</finger_collision>
+      <finger_collision>gripper_3finger/finger_2_collision</finger_collision>
+      <finger_contact_topic>/gripper_3finger/finger_0_contact</finger_contact_topic>
+      <finger_contact_topic>/gripper_3finger/finger_1_contact</finger_contact_topic>
+      <finger_contact_topic>/gripper_3finger/finger_2_contact</finger_contact_topic>
+      <!-- open = fingers spread outward, ready to grab; closed = fingers
+           curled toward center, object grasped; 30 deg from vertical. -->
+      <open_position>0.5235</open_position>
+      <closed_position>-0.5235</closed_position>
+      <finger_p_gain>1.5</finger_p_gain>
+      <finger_d_gain>0.02</finger_d_gain>
+      <finger_effort_limit>0.5</finger_effort_limit>
+      <command_topic>/hillstar/gripper_cmd</command_topic>
+      <state_topic>/hillstar/gripper_state</state_topic>
+      <grasp_radius>0.08</grasp_radius>
+      <grasp_center_offset>0 0 -0.252</grasp_center_offset>
+      <vehicle_model_name>hillstar_rigid_arm_gripper</vehicle_model_name>
+    </plugin>
+  </model>
+</sdf>

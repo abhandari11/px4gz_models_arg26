@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sdf version='1.9'>
   <!--
-    Self-contained 3-link rigid manipulator attachment.
+    Self-contained 3-link rigid manipulator attachment, all 3 joints
+    actuated (shoulder/elbow/wrist).
 
     Mount contract: link_1 is this module's attachment point; the composing
     file is expected to add one small glue joint (parent=base_link,
     child=rigid_arm_3link/link_1) - see hillstar_rigid_arm/model.sdf's
-    "rigid_arm_joint_1", a fixed joint welding link_1 to base_link at the
+    "rigid_arm_joint_1", a revolute joint welding link_1 to base_link at the
     same boss the gripper attachment uses. This mirrors x500_mono_cam/
     x500_depth's own CameraJoint pattern exactly, and for the same reason:
     sdformat validates a merge='true' include's internal frame graph against
@@ -17,7 +18,16 @@
     frame ... not found in model with name[rigid_arm_3link]"). The joint
     only resolves if it's declared in the file that has already merged both
     sides in. A future attachment (e.g. a continuum arm) needs the same
-    one-line glue joint in whatever composes it onto a base.
+    one-line glue joint in whatever composes it onto a base. Even though
+    rigid_arm_joint_1 itself is declared in the composing file, this
+    module's own JointTrajectoryController/JointStatePublisher plugins below
+    reference it by name anyway - plugin <joint_name> parameters are plain
+    strings resolved at runtime against the fully-merged model, not subject
+    to the per-document frame-graph check that forces the joint declaration
+    itself out of this file. That keeps a single controller/publisher
+    instance driving all 3 joints instead of needing a duplicate plugin
+    block in every composing file, as long as each composing file names its
+    glue joint "rigid_arm_joint_1" per this contract.
 
     Link/joint names are prefixed with this model's own name
     (rigid_arm_3link/...) so they can't collide with the flattened base
@@ -26,13 +36,13 @@
 
     Fold/ground-clearance design: each rod is declared in its REST (zero
     joint angle) pose already pitched 90 deg from the mount boss, so at
-    joint angle 0 the whole 3x0.15m chain lies flat and points aft (-X),
+    joint angle 0 the whole 3x0.18m chain lies flat and points aft (-X),
     hugging base_link's underside at the same height as the mount boss
     (z=-0.015 in base_link's frame, matching hillstar_base's
     collision_gripper_mount/visual_gripper_mount) instead of hanging
     straight down. Hillstar's legs only give ~0.21m of ground clearance (see
     hillstar_base's collision_leg_* comments) - a straight-down chain of
-    this length (0.45m fully extended) would ground out immediately, so the
+    this length (0.54m fully extended) would ground out immediately, so the
     flat/aft rest pose is the load-bearing part of "stays clear of the
     ground when landed", not the joint limits. Since a rotation about Y
     commutes with another rotation about Y, the pitch-axis joint axis
@@ -60,30 +70,31 @@
       <self_collide>false</self_collide>
       <velocity_decay/>
       <inertial>
-        <!-- rod, r=0.008 L=0.15 m=0.025kg, about its own CoM (offset -0.075 -->
+        <!-- rod, r=0.008 L=0.18 m=0.025kg, about its own CoM (offset -0.09 -->
         <!-- along local z, matching the collision/visual pose below); -->
-        <!-- izz is about the rod's long axis (m*r^2/2), ixx/iyy perpendicular -->
-        <!-- to it (m*(3r^2+L^2)/12). Kept intentionally light (25g, same as -->
-        <!-- a single prop elsewhere in this project) so swinging the arm -->
-        <!-- doesn't meaningfully perturb the ~4.16kg vehicle. -->
-        <pose>0 0 -0.075 0 0 0</pose>
+        <!-- izz is about the rod's long axis (m*r^2/2, independent of L), -->
+        <!-- ixx/iyy perpendicular to it (m*(3r^2+L^2)/12). Kept -->
+        <!-- intentionally light (25g, same as a single prop elsewhere in -->
+        <!-- this project) so swinging the arm doesn't meaningfully perturb -->
+        <!-- the ~4.16kg vehicle. -->
+        <pose>0 0 -0.09 0 0 0</pose>
         <mass>0.025</mass>
         <inertia>
-          <ixx>4.73e-5</ixx>
-          <iyy>4.73e-5</iyy>
+          <ixx>6.79e-5</ixx>
+          <iyy>6.79e-5</iyy>
           <izz>8.0e-7</izz>
         </inertia>
       </inertial>
       <collision name="rigid_arm_3link/link_1_collision">
-        <pose>0 0 -0.075 0 0 0</pose>
+        <pose>0 0 -0.09 0 0 0</pose>
         <geometry>
-          <cylinder><radius>0.008</radius><length>0.15</length></cylinder>
+          <cylinder><radius>0.008</radius><length>0.18</length></cylinder>
         </geometry>
       </collision>
       <visual name="rigid_arm_3link/link_1_visual">
-        <pose>0 0 -0.075 0 0 0</pose>
+        <pose>0 0 -0.09 0 0 0</pose>
         <geometry>
-          <cylinder><radius>0.008</radius><length>0.15</length></cylinder>
+          <cylinder><radius>0.008</radius><length>0.18</length></cylinder>
         </geometry>
         <material>
           <ambient>0.6 0.35 0.1 1</ambient>
@@ -94,37 +105,37 @@
     </link>
 
     <!-- Shoulder joint ("rigid_arm_joint_1") is NOT declared here - it is
-         the fixed glue joint added by the composing file (parent=base_link,
-         child=rigid_arm_3link/link_1); see the file header comment above
-         for why. It has no DOF, so it's intentionally absent from the
-         JointTrajectoryController/JointStatePublisher plugins below - only
-         rigid_arm_joint_2/3 (the actuated elbow/wrist) are actuated. -->
+         the revolute glue joint added by the composing file
+         (parent=base_link, child=rigid_arm_3link/link_1); see the file
+         header comment above for why, and for why it's still driven by
+         this file's own JointTrajectoryController/JointStatePublisher
+         plugins below despite living in the composing file. -->
 
     <!-- ===== Link 2 (elbow-driven rod) ===== -->
     <link name="rigid_arm_3link/link_2">
-      <pose>-0.15 0 -0.015 0 1.5708 0</pose>
+      <pose>-0.18 0 -0.015 0 1.5708 0</pose>
       <gravity>true</gravity>
       <self_collide>false</self_collide>
       <velocity_decay/>
       <inertial>
-        <pose>0 0 -0.075 0 0 0</pose>
+        <pose>0 0 -0.09 0 0 0</pose>
         <mass>0.025</mass>
         <inertia>
-          <ixx>4.73e-5</ixx>
-          <iyy>4.73e-5</iyy>
+          <ixx>6.79e-5</ixx>
+          <iyy>6.79e-5</iyy>
           <izz>8.0e-7</izz>
         </inertia>
       </inertial>
       <collision name="rigid_arm_3link/link_2_collision">
-        <pose>0 0 -0.075 0 0 0</pose>
+        <pose>0 0 -0.09 0 0 0</pose>
         <geometry>
-          <cylinder><radius>0.008</radius><length>0.15</length></cylinder>
+          <cylinder><radius>0.008</radius><length>0.18</length></cylinder>
         </geometry>
       </collision>
       <visual name="rigid_arm_3link/link_2_visual">
-        <pose>0 0 -0.075 0 0 0</pose>
+        <pose>0 0 -0.09 0 0 0</pose>
         <geometry>
-          <cylinder><radius>0.008</radius><length>0.15</length></cylinder>
+          <cylinder><radius>0.008</radius><length>0.18</length></cylinder>
         </geometry>
         <material>
           <ambient>0.6 0.35 0.1 1</ambient>
@@ -154,29 +165,29 @@
 
     <!-- ===== Link 3 (wrist-driven rod) ===== -->
     <link name="rigid_arm_3link/link_3">
-      <pose>-0.30 0 -0.015 0 1.5708 0</pose>
+      <pose>-0.36 0 -0.015 0 1.5708 0</pose>
       <gravity>true</gravity>
       <self_collide>false</self_collide>
       <velocity_decay/>
       <inertial>
-        <pose>0 0 -0.075 0 0 0</pose>
+        <pose>0 0 -0.09 0 0 0</pose>
         <mass>0.025</mass>
         <inertia>
-          <ixx>4.73e-5</ixx>
-          <iyy>4.73e-5</iyy>
+          <ixx>6.79e-5</ixx>
+          <iyy>6.79e-5</iyy>
           <izz>8.0e-7</izz>
         </inertia>
       </inertial>
       <collision name="rigid_arm_3link/link_3_collision">
-        <pose>0 0 -0.075 0 0 0</pose>
+        <pose>0 0 -0.09 0 0 0</pose>
         <geometry>
-          <cylinder><radius>0.008</radius><length>0.15</length></cylinder>
+          <cylinder><radius>0.008</radius><length>0.18</length></cylinder>
         </geometry>
       </collision>
       <visual name="rigid_arm_3link/link_3_visual">
-        <pose>0 0 -0.075 0 0 0</pose>
+        <pose>0 0 -0.09 0 0 0</pose>
         <geometry>
-          <cylinder><radius>0.008</radius><length>0.15</length></cylinder>
+          <cylinder><radius>0.008</radius><length>0.18</length></cylinder>
         </geometry>
         <material>
           <ambient>0.6 0.35 0.1 1</ambient>
@@ -215,8 +226,23 @@
          "/model/<containing-model-name>/joint_trajectory" - once this
          attachment is merged into a vehicle model that name resolves to the
          vehicle's own name (e.g. hillstar_rigid_arm), not this file's, which
-         keeps this module name-agnostic. -->
+         keeps this module name-agnostic. All 3 joints (shoulder/elbow/
+         wrist) share identical gains/limits here. -->
     <plugin filename="gz-sim-joint-trajectory-controller-system" name="gz::sim::systems::JointTrajectoryController">
+      <joint_name>rigid_arm_joint_1</joint_name>
+      <initial_position>0</initial_position>
+      <position_p_gain>4.0</position_p_gain>
+      <position_i_gain>0.05</position_i_gain>
+      <position_d_gain>0.15</position_d_gain>
+      <position_i_min>-0.3</position_i_min>
+      <position_i_max>0.3</position_i_max>
+      <position_cmd_min>-0.6</position_cmd_min>
+      <position_cmd_max>0.6</position_cmd_max>
+      <velocity_p_gain>0.3</velocity_p_gain>
+      <velocity_i_gain>1.0</velocity_i_gain>
+      <velocity_cmd_min>-0.6</velocity_cmd_min>
+      <velocity_cmd_max>0.6</velocity_cmd_max>
+
       <joint_name>rigid_arm_joint_2</joint_name>
       <initial_position>0</initial_position>
       <position_p_gain>4.0</position_p_gain>
@@ -252,6 +278,7 @@
          regardless of which base it ends up mounted on. -->
     <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
       <topic>/rigid_arm_3link/joint_states</topic>
+      <joint_name>rigid_arm_joint_1</joint_name>
       <joint_name>rigid_arm_joint_2</joint_name>
       <joint_name>rigid_arm_joint_3</joint_name>
     </plugin>

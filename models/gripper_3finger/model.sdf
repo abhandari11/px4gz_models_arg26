@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sdf version='1.9'>
   <!--
-    Self-contained finger set for the 3-finger gripper attachment. See
-    model.config for why the mount joints and the GripperController plugin
-    live in the composing file instead of here.
+    Self-contained finger set for the 3-finger gripper attachment, plus a
+    palm base (see below) that visually/physically connects the 3 fingers -
+    without it, the fingers are separate joint-mounted links with nothing
+    between them, which reads as "floating" fingers rather than a single
+    gripper assembly. See model.config for why the mount joints and the
+    GripperController plugin live in the composing file instead of here.
   -->
   <model name='gripper_3finger'>
     <!-- hillstar_base's own <model> carries a <pose>0 0 0.30 0 0 0</pose>
@@ -18,6 +21,45 @@
     <pose>0 0 0.30 0 0 0</pose>
     <self_collide>false</self_collide>
     <static>false</static>
+
+    <!-- Palm base: a short cylinder spanning from the mount boss (z=0, this
+         module's own origin) down to where the fingers start (z=-0.025,
+         matching every finger link's own origin - see each finger's <pose>
+         below), radius 0.045 so it clears the fingers' own 0.035m mount
+         radius plus their box cross-section. Purely a physical/visual
+         connector, like the gripper_3finger/finger_* links it needs a glue
+         joint from the composing file (parent=base_link for hillstar_gripper,
+         parent=rigid_arm_3link/link_3 for hillstar_rigid_arm_gripper) -
+         same reasoning as the finger joints, see model.config. -->
+    <link name="gripper_3finger/palm">
+      <pose>0 0 -0.0125 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.015</mass>
+        <inertia>
+          <ixx>8.375e-6</ixx>
+          <iyy>8.375e-6</iyy>
+          <izz>1.519e-5</izz>
+        </inertia>
+      </inertial>
+      <collision name="gripper_3finger/palm_collision">
+        <geometry>
+          <cylinder><radius>0.045</radius><length>0.025</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="gripper_3finger/palm_visual">
+        <geometry>
+          <cylinder><radius>0.045</radius><length>0.025</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.15 0.15 0.17 1</ambient>
+          <diffuse>0.25 0.25 0.28 1</diffuse>
+          <specular>0.3 0.3 0.3 1</specular>
+        </material>
+      </visual>
+    </link>
 
     <!-- Finger 0 - mount angle 0 deg -->
     <link name="gripper_3finger/finger_0">

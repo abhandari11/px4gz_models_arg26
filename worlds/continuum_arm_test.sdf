@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf version="1.9">
+  <world name="continuum_arm_test">
+    <physics type="ode">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+    <plugin name="gz::sim::systems::Physics" filename="gz-sim-physics-system"/>
+    <plugin name="gz::sim::systems::UserCommands" filename="gz-sim-user-commands-system"/>
+    <plugin name="gz::sim::systems::SceneBroadcaster" filename="gz-sim-scene-broadcaster-system"/>
+
+    <gravity>0 0 -9.8</gravity>
+
+    <light name="sun" type="directional">
+      <pose>0 0 10 0 0 0</pose>
+      <direction>0.3 0.3 -0.9</direction>
+      <diffuse>0.9 0.9 0.9 1</diffuse>
+    </light>
+
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry><plane><normal>0 0 1</normal><size>10 10</size></plane></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><plane><normal>0 0 1</normal><size>10 10</size></plane></geometry>
+          <material><ambient>0.7 0.7 0.7 1</ambient></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Standalone test rig: mounts continuum_arm_soft's base_cyl rigidly to
+         the world 0.5m up, well clear of the ground plane (max arm reach is
+         well under 0.3m), so the free-hanging tip is only reacting to
+         gravity + the tendon controller, not ground contact. merge='true' is
+         required for the fixed world->base_cyl glue joint below to resolve
+         (see models/rigid_arm_3link/model.sdf's header comment on why a
+         joint referencing a foreign/outside frame can't live inside the
+         included module's own document). -->
+    <model name="continuum_arm_test_rig">
+      <pose>0 0 0.5 0 0 0</pose>
+      <static>false</static>
+      <include merge='true'>
+        <uri>model://continuum_arm_soft</uri>
+      </include>
+      <joint name="world_mount_joint" type="fixed">
+        <parent>world</parent>
+        <child>continuum_arm_soft/base_cyl</child>
+      </joint>
+    </model>
+  </world>
+</sdf>

@@ -24,6 +24,14 @@
       <uri>model://gripper_3finger</uri>
     </include>
 
+    <!-- Glue joint: welds the palm base (gripper_3finger/palm) onto the
+         vehicle body at the same mount boss the fingers hang from. Fixed,
+         not revolute - it's a static connector, not an actuated part. -->
+    <joint name="palm_joint" type="fixed">
+      <parent>base_link</parent>
+      <child>gripper_3finger/palm</child>
+    </joint>
+
     <!-- Glue joints: mount each finger onto the vehicle body. Axis/limit/
          dynamics are unchanged from the original monolithic hillstar. -->
     <joint name="finger_0_joint" type="revolute">

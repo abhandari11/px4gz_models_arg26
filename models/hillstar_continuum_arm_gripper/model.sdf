@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf version='1.9'>
+  <model name='hillstar_continuum_arm_gripper'>
+    <!-- Composition of three modules: hillstar_base (frame/rotors/sensors),
+         continuum_arm_soft (15-segment soft continuum arm welded to
+         base_link's underside), and gripper_3finger (mounted at the arm's
+         own tip, continuum_arm_soft/segment_15, instead of at base_link the
+         way hillstar_gripper does it). Everything that references a link
+         from a *different* include has to live in this file rather than
+         inside any one module - same reasoning as hillstar_rigid_arm's,
+         hillstar_gripper's, and hillstar_rigid_arm_gripper's own glue
+         joints (see hillstar_rigid_arm_gripper/model.sdf, this file mirrors
+         it almost exactly with the continuum arm swapped in for the rigid
+         one). -->
+    <include merge='true'>
+      <uri>model://hillstar</uri>
+    </include>
+
+    <!-- continuum_arm_soft was authored standalone (base_cyl's own top face
+         at its own model-frame z=0), unlike rigid_arm_3link/gripper_3finger
+         which bake hillstar_base's +0.30 model offset into their own model
+         root. Overriding the include's pose relative to base_link directly
+         sidesteps that: -0.015 lands base_cyl's top face at the same mount
+         boss height hillstar_rigid_arm_gripper's shoulder joint uses (see
+         rigid_arm_3link/model.sdf's link_1 pose comment for the boss
+         height derivation). No rotation needed - continuum_arm_soft's
+         segments already hang along -Z, matching a bottom mount directly. -->
+    <include merge='true'>
+      <uri>model://continuum_arm_soft</uri>
+      <pose relative_to='base_link'>0 0 -0.015 0 0 0</pose>
+    </include>
+
+    <!-- Mount glue joint: welds the arm's base cylinder onto the vehicle
+         body at the mount boss. Fixed - the arm's own bending comes from
+         its 15 internal universal joints (driven by
+         continuum_arm_soft's own TendonArmController plugin, which keeps
+         working unmodified after merge since every joint it names lives
+         inside continuum_arm_soft's own document), not from this mount. -->
+    <joint name="continuum_arm_mount_joint" type="fixed">
+      <parent>base_link</parent>
+      <child>continuum_arm_soft/base_cyl</child>
+    </joint>
+
+    <!-- gripper_3finger (fingers + palm base) is mounted at the tip of
+         continuum_arm_soft/segment_15 instead of base_link. Overriding the
+         include's own <pose>, relative to segment_15, replaces
+         gripper_3finger's internal <pose>0 0 0.30 0 0 0</pose> (which
+         exists only to compensate for hillstar's +0.30 model offset when
+         mounted straight on base_link - not needed here since we're posing
+         relative to segment_15 directly, not the model root). Translation
+         (0,0,-0.01) is segment_15's own tip in its local frame: every
+         continuum_arm_soft segment's origin sits at its geometric center
+         (see continuum_arm_soft/model.sdf's own header comment), and each
+         segment is 0.02m long, so its bottom/distal face is 0.01m below
+         its own origin. No extra rotation is applied, so gripper_3finger's
+         local -Z (the direction its fingers hang/reach in) lines up with
+         segment_15's local -Z - i.e. the fingers reach further out,
+         continuing the direction the arm already hangs in. -->
+    <include merge='true'>
+      <uri>model://gripper_3finger</uri>
+      <pose relative_to='continuum_arm_soft/segment_15'>0 0 -0.01 0 0 0</pose>
+    </include>
+
+    <!-- Glue joint: welds the palm base onto the arm's tip segment, same as
+         each finger below. Fixed - it's a static connector between the arm
+         and the finger set, not an actuated part. -->
+    <joint name="palm_joint" type="fixed">
+      <parent>continuum_arm_soft/segment_15</parent>
+      <child>gripper_3finger/palm</child>
+    </joint>
+
+    <!-- Finger glue joints: mount each finger onto the arm's tip segment
+         instead of base_link (the only difference from hillstar_gripper's
+         equivalent joints). Axis/limit/dynamics unchanged. -->
+    <joint name="finger_0_joint" type="revolute">
+      <parent>continuum_arm_soft/segment_15</parent>
+      <child>gripper_3finger/finger_0</child>
+      <axis>
+        <xyz>0 -1 0</xyz>
+        <limit>
+          <lower>-0.6</lower>
+          <upper>0.6</upper>
+          <effort>0.5</effort>
+          <velocity>3.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.02</damping>
+          <friction>0.005</friction>
+        </dynamics>
+      </axis>
+    </joint>
+
+    <joint name="finger_1_joint" type="revolute">
+      <parent>continuum_arm_soft/segment_15</parent>
+      <child>gripper_3finger/finger_1</child>
+      <axis>
+        <xyz>0 -1 0</xyz>
+        <limit>
+          <lower>-0.6</lower>
+          <upper>0.6</upper>
+          <effort>0.5</effort>
+          <velocity>3.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.02</damping>
+          <friction>0.005</friction>
+        </dynamics>
+      </axis>
+    </joint>
+
+    <joint name="finger_2_joint" type="revolute">
+      <parent>continuum_arm_soft/segment_15</parent>
+      <child>gripper_3finger/finger_2</child>
+      <axis>
+        <xyz>0 -1 0</xyz>
+        <limit>
+          <lower>-0.6</lower>
+          <upper>0.6</upper>
+          <effort>0.5</effort>
+          <velocity>3.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.02</damping>
+          <friction>0.005</friction>
+        </dynamics>
+      </axis>
+    </joint>
+
+    <!-- Custom grasp controller - identical logic/topics to hillstar_gripper,
+         just re-anchored to the arm's tip segment instead of base_link:
+           - gripper_base_link is continuum_arm_soft/segment_15 (the
+             fingers' actual parent now), so TryGrasp()'s world-pose
+             lookups and Attach()'s pose-lock track the moving, bending
+             arm tip, not the fixed vehicle body.
+           - grasp_center_offset is expressed in segment_15's own local
+             frame: -0.01 to reach segment_15's own tip (matching the
+             include pose above) plus -0.072 for the same finger-tip reach
+             hillstar_gripper/hillstar_rigid_arm_gripper use relative to
+             their own mount point, giving -0.082 total. -->
+    <plugin filename="GripperController" name="gripper_controller::GripperController">
+      <gripper_base_link>continuum_arm_soft/segment_15</gripper_base_link>
+      <finger_joint>finger_0_joint</finger_joint>
+      <finger_joint>finger_1_joint</finger_joint>
+      <finger_joint>finger_2_joint</finger_joint>
+      <finger_collision>gripper_3finger/finger_0_collision</finger_collision>
+      <finger_collision>gripper_3finger/finger_1_collision</finger_collision>
+      <finger_collision>gripper_3finger/finger_2_collision</finger_collision>
+      <finger_contact_topic>/gripper_3finger/finger_0_contact</finger_contact_topic>
+      <finger_contact_topic>/gripper_3finger/finger_1_contact</finger_contact_topic>
+      <finger_contact_topic>/gripper_3finger/finger_2_contact</finger_contact_topic>
+      <!-- open = fingers spread outward, ready to grab; closed = fingers
+           curled toward center, object grasped; 30 deg from vertical. -->
+      <open_position>0.5235</open_position>
+      <closed_position>-0.5235</closed_position>
+      <finger_p_gain>1.5</finger_p_gain>
+      <finger_d_gain>0.02</finger_d_gain>
+      <finger_effort_limit>0.5</finger_effort_limit>
+      <command_topic>/hillstar/gripper_cmd</command_topic>
+      <state_topic>/hillstar/gripper_state</state_topic>
+      <grasp_radius>0.08</grasp_radius>
+      <grasp_center_offset>0 0 -0.082</grasp_center_offset>
+      <vehicle_model_name>hillstar_continuum_arm_gripper</vehicle_model_name>
+    </plugin>
+  </model>
+</sdf>
