@@ -116,11 +116,11 @@
       <finger_effort_limit>0.5</finger_effort_limit>
       <command_topic>/hillstar/gripper_cmd</command_topic>
       <state_topic>/hillstar/gripper_state</state_topic>
-      <grasp_radius>0.08</grasp_radius>
+      <grasp_radius>0.25</grasp_radius>
       <!-- world-Z offset of the gripper's capture point, relative to
            base_link's own origin. 7.2 cm below frame base
            Gazebo frame is Z-up -->
-      <grasp_center_offset>0 0 -0.072</grasp_center_offset>
+      <grasp_center_offset>0 0 0.074</grasp_center_offset>
       <vehicle_model_name>hillstar_gripper</vehicle_model_name>
     </plugin>
   </model>

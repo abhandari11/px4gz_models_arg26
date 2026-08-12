@@ -36,7 +36,7 @@
       <self_collide>false</self_collide>
       <velocity_decay/>
       <inertial>
-        <mass>0.120637</mass>
+        <mass>0.05</mass>
         <inertia>
           <ixx>5.227610e-05</ixx>
           <iyy>5.227610e-05</iyy>
@@ -66,7 +66,7 @@
       <self_collide>false</self_collide>
       <velocity_decay/>
       <inertial>
-        <mass>0.027646</mass>
+        <mass>0.0133</mass>
         <inertia>
           <ixx>3.686135e-06</ixx>
           <iyy>3.686135e-06</iyy>
@@ -129,7 +129,7 @@
       <self_collide>false</self_collide>
       <velocity_decay/>
       <inertial>
-        <mass>0.027646</mass>
+        <mass>0.0133</mass>
         <inertia>
           <ixx>3.686135e-06</ixx>
           <iyy>3.686135e-06</iyy>
@@ -192,7 +192,7 @@
       <self_collide>false</self_collide>
       <velocity_decay/>
       <inertial>
-        <mass>0.027646</mass>
+        <mass>0.0133</mass>
         <inertia>
           <ixx>3.686135e-06</ixx>
           <iyy>3.686135e-06</iyy>
@@ -255,7 +255,7 @@
       <self_collide>false</self_collide>
       <velocity_decay/>
       <inertial>
-        <mass>0.027646</mass>
+        <mass>0.0133</mass>
         <inertia>
           <ixx>3.686135e-06</ixx>
           <iyy>3.686135e-06</iyy>
@@ -318,7 +318,7 @@
       <self_collide>false</self_collide>
       <velocity_decay/>
       <inertial>
-        <mass>0.027646</mass>
+        <mass>0.0133</mass>
         <inertia>
           <ixx>3.686135e-06</ixx>
           <iyy>3.686135e-06</iyy>
@@ -381,7 +381,7 @@
       <self_collide>false</self_collide>
       <velocity_decay/>
       <inertial>
-        <mass>0.027646</mass>
+        <mass>0.0133</mass>
         <inertia>
           <ixx>3.686135e-06</ixx>
           <iyy>3.686135e-06</iyy>
@@ -444,7 +444,7 @@
       <self_collide>false</self_collide>
       <velocity_decay/>
       <inertial>
-        <mass>0.027646</mass>
+        <mass>0.0133</mass>
         <inertia>
           <ixx>3.686135e-06</ixx>
           <iyy>3.686135e-06</iyy>
@@ -507,7 +507,7 @@
       <self_collide>false</self_collide>
       <velocity_decay/>
       <inertial>
-        <mass>0.027646</mass>
+        <mass>0.0133</mass>
         <inertia>
           <ixx>3.686135e-06</ixx>
           <iyy>3.686135e-06</iyy>
@@ -570,7 +570,7 @@
       <self_collide>false</self_collide>
       <velocity_decay/>
       <inertial>
-        <mass>0.027646</mass>
+        <mass>0.0133</mass>
         <inertia>
           <ixx>3.686135e-06</ixx>
           <iyy>3.686135e-06</iyy>
@@ -633,7 +633,7 @@
       <self_collide>false</self_collide>
       <velocity_decay/>
       <inertial>
-        <mass>0.027646</mass>
+        <mass>0.0133</mass>
         <inertia>
           <ixx>3.686135e-06</ixx>
           <iyy>3.686135e-06</iyy>
@@ -696,7 +696,7 @@
       <self_collide>false</self_collide>
       <velocity_decay/>
       <inertial>
-        <mass>0.027646</mass>
+        <mass>0.0133</mass>
         <inertia>
           <ixx>3.686135e-06</ixx>
           <iyy>3.686135e-06</iyy>
@@ -759,7 +759,7 @@
       <self_collide>false</self_collide>
       <velocity_decay/>
       <inertial>
-        <mass>0.027646</mass>
+        <mass>0.0133</mass>
         <inertia>
           <ixx>3.686135e-06</ixx>
           <iyy>3.686135e-06</iyy>
@@ -822,7 +822,7 @@
       <self_collide>false</self_collide>
       <velocity_decay/>
       <inertial>
-        <mass>0.027646</mass>
+        <mass>0.0133</mass>
         <inertia>
           <ixx>3.686135e-06</ixx>
           <iyy>3.686135e-06</iyy>
@@ -885,7 +885,7 @@
       <self_collide>false</self_collide>
       <velocity_decay/>
       <inertial>
-        <mass>0.027646</mass>
+        <mass>0.0133</mass>
         <inertia>
           <ixx>3.686135e-06</ixx>
           <iyy>3.686135e-06</iyy>
@@ -948,7 +948,7 @@
       <self_collide>false</self_collide>
       <velocity_decay/>
       <inertial>
-        <mass>0.027646</mass>
+        <mass>0.0133</mass>
         <inertia>
           <ixx>3.686135e-06</ixx>
           <iyy>3.686135e-06</iyy>

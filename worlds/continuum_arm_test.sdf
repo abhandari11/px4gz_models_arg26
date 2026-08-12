@@ -9,6 +9,25 @@
     <plugin name="gz::sim::systems::Physics" filename="gz-sim-physics-system"/>
     <plugin name="gz::sim::systems::UserCommands" filename="gz-sim-user-commands-system"/>
     <plugin name="gz::sim::systems::SceneBroadcaster" filename="gz-sim-scene-broadcaster-system"/>
+    <!-- Per-link world-frame pose feed for the tip mocap bridge (see
+         px4_base/continuum_arm_tip_bridge.py). Not static (the arm moves
+         continuously under tendon actuation), so publish at a real
+         update_frequency rather than slope_wall.sdf's
+         static_publisher/static_update_frequency=1Hz pattern, which is only
+         valid for that world's non-moving props. Entries arrive on
+         /world/continuum_arm_test/pose/info, flat/unscoped by link name
+         (e.g. "continuum_arm_soft/segment_15") -- read directly via
+         gz-transport, NOT via ros_gz_bridge's Pose_V->TF conversion, which
+         empirically drops frame_id/child_frame_id (see
+         world_object_publisher.py's header comment for the same finding on
+         slope_wall's identical setup). -->
+    <plugin filename="gz-sim-pose-publisher-system" name="gz::sim::systems::PosePublisher">
+      <publish_link_pose>true</publish_link_pose>
+      <publish_model_pose>true</publish_model_pose>
+      <use_pose_vector_msg>true</use_pose_vector_msg>
+      <static_publisher>false</static_publisher>
+      <update_frequency>60</update_frequency>
+    </plugin>
 
     <gravity>0 0 -9.8</gravity>
 
