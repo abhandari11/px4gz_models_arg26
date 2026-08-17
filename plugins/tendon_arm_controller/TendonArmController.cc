@@ -1,6 +1,7 @@
 #include "TendonArmController.hh"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 
 #include <gz/plugin/Register.hh>
@@ -63,12 +64,29 @@ void TendonArmController::Configure(
     this->tendonTopic = _sdf->Get<std::string>("tendon_topic");
   if (_sdf->HasElement("angles_topic"))
     this->anglesTopic = _sdf->Get<std::string>("angles_topic");
+  if (_sdf->HasElement("command_filter_omega"))
+    this->commandFilterOmega = _sdf->Get<double>("command_filter_omega");
+  if (_sdf->HasElement("max_tendon_rate_m_s"))
+    this->maxTendonRateMPerS = _sdf->Get<double>("max_tendon_rate_m_s");
 
   // Zero tendon deflection (l1=l2=l3=restLength) until the first command.
   this->l1 = this->l2 = this->l3 = this->restLength;
+  this->l1Cmd = this->l2Cmd = this->l3Cmd = this->restLength;
+  this->shaperL1.SetOmega(this->commandFilterOmega);
+  this->shaperL2.SetOmega(this->commandFilterOmega);
+  this->shaperL3.SetOmega(this->commandFilterOmega);
+  this->shaperL1.SetMaxRate(this->maxTendonRateMPerS);
+  this->shaperL2.SetMaxRate(this->maxTendonRateMPerS);
+  this->shaperL3.SetMaxRate(this->maxTendonRateMPerS);
+  this->shaperL1.Reset(this->restLength);
+  this->shaperL2.Reset(this->restLength);
+  this->shaperL3.Reset(this->restLength);
+  this->shapersInitialized = true;
 
   this->anglesPub =
       this->node.Advertise<gz::msgs::Vector3d>(this->anglesTopic);
+  this->computeTimePub =
+      this->node.Advertise<gz::msgs::Double>(this->tendonTopic + "/compute_time_ms");
 
   this->node.Subscribe(this->tendonTopic, &TendonArmController::OnTendonCmd,
                         this);
@@ -99,19 +117,18 @@ void TendonArmController::UpdateTargets()
 //////////////////////////////////////////////////
 void TendonArmController::OnTendonCmd(const gz::msgs::Vector3d &_msg)
 {
-  gz::msgs::Vector3d anglesMsg;
-  {
-    std::lock_guard<std::mutex> lock(this->mutex);
-    this->l1 = _msg.x();
-    this->l2 = _msg.y();
-    this->l3 = _msg.z();
-    this->haveCommand = true;
-    this->UpdateTargets();
-    anglesMsg.set_x(this->thetaX);
-    anglesMsg.set_y(this->thetaY);
-    anglesMsg.set_z(0.0);
-  }
-  this->anglesPub.Publish(anglesMsg);
+  // Raw commands only set the CommandShapers' targets - PreUpdate() advances
+  // them every physics tick and feeds the FILTERED length into
+  // UpdateTargets(), giving the arm its smooth, zero-overshoot, ~2s servo
+  // response instead of an instant target jump (see CommandShaper.hpp).
+  std::lock_guard<std::mutex> lock(this->mutex);
+  this->l1Cmd = _msg.x();
+  this->l2Cmd = _msg.y();
+  this->l3Cmd = _msg.z();
+  this->shaperL1.SetTarget(this->l1Cmd);
+  this->shaperL2.SetTarget(this->l2Cmd);
+  this->shaperL3.SetTarget(this->l3Cmd);
+  this->haveCommand = true;
 }
 
 //////////////////////////////////////////////////
@@ -121,12 +138,29 @@ void TendonArmController::PreUpdate(
   if (_info.paused)
     return;
 
+  const auto computeStart = std::chrono::steady_clock::now();
+
+  const double dt =
+      std::chrono::duration<double>(_info.dt).count();
+
   double targetX, targetY;
+  gz::msgs::Vector3d anglesMsg;
   {
     std::lock_guard<std::mutex> lock(this->mutex);
+    this->shaperL1.Update(dt);
+    this->shaperL2.Update(dt);
+    this->shaperL3.Update(dt);
+    this->l1 = this->shaperL1.Value();
+    this->l2 = this->shaperL2.Value();
+    this->l3 = this->shaperL3.Value();
+    this->UpdateTargets();
     targetX = this->thetaXPerJoint;
     targetY = this->thetaYPerJoint;
+    anglesMsg.set_x(this->thetaX);
+    anglesMsg.set_y(this->thetaY);
+    anglesMsg.set_z(0.0);
   }
+  this->anglesPub.Publish(anglesMsg);
 
   for (const auto &jointEntity : this->jointEntities)
   {
@@ -152,6 +186,12 @@ void TendonArmController::PreUpdate(
     effortY = std::clamp(effortY, -this->effortLimit, this->effortLimit);
     joint.SetForce(_ecm, {effortX, effortY});
   }
+
+  const double computeMs = std::chrono::duration<double, std::milli>(
+      std::chrono::steady_clock::now() - computeStart).count();
+  gz::msgs::Double computeMsg;
+  computeMsg.set_data(computeMs);
+  this->computeTimePub.Publish(computeMsg);
 }
 
 GZ_ADD_PLUGIN(TendonArmController,

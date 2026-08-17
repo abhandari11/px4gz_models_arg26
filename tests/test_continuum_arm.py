@@ -1,11 +1,11 @@
 """
-Functional test for the continuum_arm_soft model + TendonArmController plugin.
+Functional test for the continuum_arm_pcc model + TendonArmController plugin.
 
 Launches `gz sim` headless with worlds/continuum_arm_test.sdf (the arm
 rigidly mounted to the world, clear of the ground), publishes varying
-3-tendon length commands on /continuum_arm_soft/tendon_cmd, lets physics
+3-tendon length commands on /continuum_arm_pcc/tendon_cmd, lets physics
 settle, and reads back the actual per-joint bend angles from
-/continuum_arm_soft/joint_states (gz.msgs.Model, one gz.msgs.Joint per
+/continuum_arm_pcc/joint_states (gz.msgs.Model, one gz.msgs.Joint per
 listed joint, axis1/axis2 .position holding the X/Y bend angle for that
 joint) to verify the arm bent into the constant-curvature shape the
 tendon-space Jacobian in TendonArmController predicts:
@@ -32,10 +32,10 @@ from gz.msgs10.model_pb2 import Model
 GZ_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WORLD = os.path.join(GZ_DIR, "worlds", "continuum_arm_test.sdf")
 
-TENDON_TOPIC = "/continuum_arm_soft/tendon_cmd"
-JOINT_STATE_TOPIC = "/continuum_arm_soft/joint_states"
-REST_LENGTH = 0.30
-PITCH_RADIUS = 0.018
+TENDON_TOPIC = "/continuum_arm_pcc/tendon_cmd"
+JOINT_STATE_TOPIC = "/continuum_arm_pcc/joint_states"
+REST_LENGTH = 0.40
+PITCH_RADIUS = 0.015
 N_JOINTS = 15
 SETTLE_SECONDS = 3.0
 POLL_TIMEOUT = 8.0
@@ -105,7 +105,7 @@ def run_case(node, name, l1, l2, l3, tol=0.35):
     ok = True
     sum_x = sum_y = 0.0
     for i in range(1, N_JOINTS + 1):
-        jname = f"continuum_arm_soft/joint_{i}"
+        jname = f"continuum_arm_pcc/joint_{i}"
         if jname not in positions:
             print(f"FAIL: missing joint state for {jname}")
             ok = False

@@ -10,17 +10,25 @@
 #include <gz/sim/Model.hh>
 #include <gz/transport/Node.hh>
 #include <gz/msgs/vector3d.pb.h>
+#include <gz/msgs/double.pb.h>
+
+#include "../common/CommandShaper.hpp"
 
 namespace tendon_arm_controller
 {
 /// Constant-curvature tendon-space joint-mimic controller for a 3-tendon
-/// soft continuum arm (see models/continuum_arm_soft).
+/// soft continuum arm (see models/continuum_arm_pcc).
 ///
-/// Subscribes to a commanded 3-tendon length vector (l1,l2,l3), maps it to
-/// global bend angles (theta_x, theta_y) via the standard 3-tendon
-/// constant-curvature Jacobian, distributes theta_x/N and theta_y/N evenly
-/// across every joint listed in <joint_name>, and drives each joint's two
-/// axes toward that target with a PD force loop. The per-joint passive
+/// Subscribes to a commanded 3-tendon length vector (l1,l2,l3). Raw
+/// commands are NOT applied instantly - each of the 3 tendon channels is
+/// first shaped by a critically-damped CommandShaper (see
+/// plugins/common/CommandShaper.hpp), giving the arm the smooth,
+/// zero-overshoot, ~2s-settling actuator response the open-loop baseline
+/// targets. The shaped (filtered) lengths are what actually feed the
+/// existing tendon-to-curvature Jacobian: maps to global bend angles
+/// (theta_x, theta_y), distributes theta_x/N and theta_y/N evenly across
+/// every joint listed in <joint_name>, and drives each joint's two axes
+/// toward that target with a PD force loop. The per-joint passive
 /// spring/damper declared in the SDF <axis><dynamics> block still acts
 /// underneath this - the PD loop is the "actuation" layered on top of the
 /// silicone's own passive restoring force, not a replacement for it.
@@ -50,23 +58,47 @@ class TendonArmController :
   private: std::vector<std::string> jointNames;
   private: std::vector<gz::sim::Entity> jointEntities;
 
-  private: double pitchRadius{0.018};
-  private: double restLength{0.25};
+  private: double pitchRadius{0.015};
+  private: double restLength{0.40};
   private: double positionPGain{0.15};
   private: double positionDGain{0.004};
   private: double effortLimit{0.3};
-  private: std::string tendonTopic{"/continuum_arm_soft/tendon_cmd"};
-  private: std::string anglesTopic{"/continuum_arm_soft/bend_angles"};
+  private: std::string tendonTopic{"/continuum_arm_pcc/tendon_cmd"};
+  private: std::string anglesTopic{"/continuum_arm_pcc/bend_angles"};
+
+  /// Command-shaping filters (one per tendon) - see
+  /// plugins/common/CommandShaper.hpp. Raw commands set their target only;
+  /// PreUpdate() advances them every tick and feeds the FILTERED length
+  /// into UpdateTargets(), not the raw command.
+  private: double commandFilterOmega{2.92};  // rad/s
+  private: double maxTendonRateMPerS{0.06};  // m/s, 0 = unlimited
+  private: continuum_arm_plugins::CommandShaper shaperL1;
+  private: continuum_arm_plugins::CommandShaper shaperL2;
+  private: continuum_arm_plugins::CommandShaper shaperL3;
+  private: bool shapersInitialized{false};
 
   private: gz::transport::Node node;
   private: gz::transport::Node::Publisher anglesPub;
+  /// Task-3 compute benchmark: wall-clock cost of this plugin's own
+  /// PreUpdate() work (gz.msgs.Double, milliseconds), published every
+  /// tick so the eval harness can aggregate mean/peak per model. PCC's
+  /// own PD/Jacobian evaluation is trivial (no numerical solve), so this
+  /// is mainly a baseline for comparison against Cosserat's much costlier
+  /// BVP solve.
+  private: gz::transport::Node::Publisher computeTimePub;
 
   private: std::mutex mutex;
-  /// Latest commanded tendon lengths (l1, l2, l3); defaults to restLength
-  /// each (i.e. zero deflection) until the first command arrives.
+  /// Latest FILTERED tendon lengths (l1, l2, l3) - written by PreUpdate()
+  /// each tick from the CommandShapers, then consumed by UpdateTargets().
+  /// Defaults to restLength each (i.e. zero deflection) until the first
+  /// command arrives.
   private: double l1{0.0};
   private: double l2{0.0};
   private: double l3{0.0};
+  /// Raw (unfiltered) commanded tendon lengths - the CommandShapers' target.
+  private: double l1Cmd{0.0};
+  private: double l2Cmd{0.0};
+  private: double l3Cmd{0.0};
   private: bool haveCommand{false};
 
   /// Global bend angles (rad), and their per-joint share, recomputed

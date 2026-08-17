@@ -9,6 +9,18 @@
     <plugin name="gz::sim::systems::Physics" filename="gz-sim-physics-system"/>
     <plugin name="gz::sim::systems::UserCommands" filename="gz-sim-user-commands-system"/>
     <plugin name="gz::sim::systems::SceneBroadcaster" filename="gz-sim-scene-broadcaster-system"/>
+    <!-- Base-reaction-wrench (Task 3 eval suite) + tip-payload injection:
+         ForceTorque drives the arm_base_ft_sensor sensor declared below on
+         world_mount_joint; Sensors is the generic system ForceTorque needs
+         alongside it (distinct systems, both required - see
+         docs/continuum_arm_wrench_effect_on_uav.md); ApplyLinkWrench lets
+         the eval harness apply a constant external tip payload wrench via
+         gz-transport (gz_arm_harness.py's apply_tip_payload()). -->
+    <plugin name="gz::sim::systems::ForceTorque" filename="gz-sim-forcetorque-system"/>
+    <plugin name="gz::sim::systems::Sensors" filename="gz-sim-sensors-system">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin name="gz::sim::systems::ApplyLinkWrench" filename="gz-sim-apply-link-wrench-system"/>
     <!-- Per-link world-frame pose feed for the tip mocap bridge (see
          px4_base/continuum_arm_tip_bridge.py). Not static (the arm moves
          continuously under tendon actuation), so publish at a real
@@ -16,7 +28,7 @@
          static_publisher/static_update_frequency=1Hz pattern, which is only
          valid for that world's non-moving props. Entries arrive on
          /world/continuum_arm_test/pose/info, flat/unscoped by link name
-         (e.g. "continuum_arm_soft/segment_15") -- read directly via
+         (e.g. "continuum_arm_pcc/segment_15") -- read directly via
          gz-transport, NOT via ros_gz_bridge's Pose_V->TF conversion, which
          empirically drops frame_id/child_frame_id (see
          world_object_publisher.py's header comment for the same finding on
@@ -50,23 +62,50 @@
       </link>
     </model>
 
-    <!-- Standalone test rig: mounts continuum_arm_soft's base_cyl rigidly to
-         the world 0.5m up, well clear of the ground plane (max arm reach is
-         well under 0.3m), so the free-hanging tip is only reacting to
-         gravity + the tendon controller, not ground contact. merge='true' is
-         required for the fixed world->base_cyl glue joint below to resolve
-         (see models/rigid_arm_3link/model.sdf's header comment on why a
-         joint referencing a foreign/outside frame can't live inside the
-         included module's own document). -->
+    <!-- Standalone test rig: mounts continuum_arm_pcc's base_cyl rigidly to
+         the world 0.7m up, well clear of the ground plane (arm reach is
+         0.40m - same physical arm/reach as continuum_arm_cosserat, hence
+         the same rig height as continuum_arm_cosserat_test.sdf), so the
+         free-hanging tip is only reacting to gravity + the tendon
+         controller, not ground contact. merge='true' is required for the
+         fixed world->base_cyl glue joint below to resolve (see
+         models/rigid_arm_3link/model.sdf's header comment on why a joint
+         referencing a foreign/outside frame can't live inside the included
+         module's own document). -->
     <model name="continuum_arm_test_rig">
-      <pose>0 0 0.5 0 0 0</pose>
+      <pose>0 0 0.7 0 0 0</pose>
       <static>false</static>
+      <!-- Small intermediate mount link: a force_torque sensor's <joint>
+           needs BOTH endpoints to be real model links (live-verified: gz's
+           ForceTorque system fails to create the sensor with "Parent link
+           with name [world]... not found" if the joint's parent is the
+           literal world frame). Splits the old single world->base_cyl
+           fixed joint into world->mount_link (no sensor) and
+           mount_link->base_cyl (sensor here), both still rigid, so the
+           rig's mechanics are unchanged. -->
+      <link name="mount_link">
+        <inertial>
+          <mass>0.01</mass>
+          <inertia><ixx>1e-6</ixx><iyy>1e-6</iyy><izz>1e-6</izz></inertia>
+        </inertial>
+      </link>
+      <joint name="world_to_mount_joint" type="fixed">
+        <parent>world</parent>
+        <child>mount_link</child>
+      </joint>
       <include merge='true'>
-        <uri>model://continuum_arm_soft</uri>
+        <uri>model://continuum_arm_pcc</uri>
       </include>
       <joint name="world_mount_joint" type="fixed">
-        <parent>world</parent>
-        <child>continuum_arm_soft/base_cyl</child>
+        <parent>mount_link</parent>
+        <child>continuum_arm_pcc/base_cyl</child>
+        <sensor name="arm_base_ft_sensor" type="force_torque">
+          <update_rate>100</update_rate>
+          <force_torque>
+            <frame>parent</frame>
+            <measure_direction>child_to_parent</measure_direction>
+          </force_torque>
+        </sensor>
       </joint>
     </model>
   </world>

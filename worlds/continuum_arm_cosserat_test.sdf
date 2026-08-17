@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf version="1.9">
+  <world name="continuum_arm_cosserat_test">
+    <physics type="ode">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+    <plugin name="gz::sim::systems::Physics" filename="gz-sim-physics-system"/>
+    <plugin name="gz::sim::systems::UserCommands" filename="gz-sim-user-commands-system"/>
+    <plugin name="gz::sim::systems::SceneBroadcaster" filename="gz-sim-scene-broadcaster-system"/>
+    <!-- Base-reaction-wrench (Task 3 eval suite) + tip-payload injection -
+         see continuum_arm_test.sdf's identical block for the rationale. -->
+    <plugin name="gz::sim::systems::ForceTorque" filename="gz-sim-forcetorque-system"/>
+    <plugin name="gz::sim::systems::Sensors" filename="gz-sim-sensors-system">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin name="gz::sim::systems::ApplyLinkWrench" filename="gz-sim-apply-link-wrench-system"/>
+    <!-- Per-link world-frame pose feed, same rationale/consumer as
+         continuum_arm_test.sdf's identical block (px4_base/
+         continuum_arm_tip_bridge.py and hillstar_control's gz-transport-only
+         comparison harness both read this directly instead of through
+         ros_gz_bridge). Added for parity with the pcc rig so both models can
+         be probed by the exact same tip-position method. -->
+    <plugin filename="gz-sim-pose-publisher-system" name="gz::sim::systems::PosePublisher">
+      <publish_link_pose>true</publish_link_pose>
+      <publish_model_pose>true</publish_model_pose>
+      <use_pose_vector_msg>true</use_pose_vector_msg>
+      <static_publisher>false</static_publisher>
+      <update_frequency>60</update_frequency>
+    </plugin>
+
+    <gravity>0 0 -9.8</gravity>
+
+    <light name="sun" type="directional">
+      <pose>0 0 10 0 0 0</pose>
+      <direction>0.3 0.3 -0.9</direction>
+      <diffuse>0.9 0.9 0.9 1</diffuse>
+    </light>
+
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry><plane><normal>0 0 1</normal><size>10 10</size></plane></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><plane><normal>0 0 1</normal><size>10 10</size></plane></geometry>
+          <material><ambient>0.7 0.7 0.7 1</ambient></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Standalone test rig: mounts continuum_arm_cosserat's base_cyl
+         rigidly to the world 0.7m up, well clear of the ground plane (arm
+         reach is 0.40m), so the free-hanging tip only reacts to gravity +
+         the tendon controller, not ground contact. merge='true' is
+         required for the fixed world->base_cyl glue joint below to
+         resolve - same reasoning as continuum_arm_test.sdf's identical
+         rig for continuum_arm_pcc. -->
+    <model name="continuum_arm_cosserat_test_rig">
+      <pose>0 0 0.7 0 0 0</pose>
+      <static>false</static>
+      <!-- Small intermediate mount link - see continuum_arm_test.sdf's
+           identical block for why (a force_torque sensor's joint needs
+           both endpoints to be real model links, not the literal world
+           frame). -->
+      <link name="mount_link">
+        <inertial>
+          <mass>0.01</mass>
+          <inertia><ixx>1e-6</ixx><iyy>1e-6</iyy><izz>1e-6</izz></inertia>
+        </inertial>
+      </link>
+      <joint name="world_to_mount_joint" type="fixed">
+        <parent>world</parent>
+        <child>mount_link</child>
+      </joint>
+      <include merge='true'>
+        <uri>model://continuum_arm_cosserat</uri>
+      </include>
+      <joint name="world_mount_joint" type="fixed">
+        <parent>mount_link</parent>
+        <child>continuum_arm_cosserat/base_cyl</child>
+        <sensor name="arm_base_ft_sensor" type="force_torque">
+          <update_rate>100</update_rate>
+          <force_torque>
+            <frame>parent</frame>
+            <measure_direction>child_to_parent</measure_direction>
+          </force_torque>
+        </sensor>
+      </joint>
+    </model>
+  </world>
+</sdf>

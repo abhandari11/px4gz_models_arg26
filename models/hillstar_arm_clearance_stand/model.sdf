@@ -1,0 +1,149 @@
+<?xml version="1.0" ?>
+<sdf version="1.9">
+  <model name="hillstar_arm_clearance_stand">
+    <static>true</static>
+    <!-- All geometry below is derived in this model's own root frame, with
+         the root frame coincident with true ground (z=0) directly under
+         the vehicle's spawn point - see model.config for the full
+         clearance derivation. Platform (rail top) height: -->
+    <!-- H = 0.55 -->
+    <link name="stand_link">
+      <pose>0 0 0 0 0 0</pose>
+
+      <!-- Left rail: supports hillstar_base's collision_leg_left
+           (skid centered at y=-0.1715). Top surface at z=0.55. -->
+      <collision name="collision_rail_left">
+        <pose>0 -0.1715 0.54 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.32 0.03 0.02</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="visual_rail_left">
+        <pose>0 -0.1715 0.54 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.32 0.03 0.02</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.35 0.25 0.15 1</ambient>
+          <diffuse>0.55 0.4 0.25 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+
+      <!-- Right rail: supports collision_leg_right (skid at y=+0.1715). -->
+      <collision name="collision_rail_right">
+        <pose>0 0.1715 0.54 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.32 0.03 0.02</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="visual_rail_right">
+        <pose>0 0.1715 0.54 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.32 0.03 0.02</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.35 0.25 0.15 1</ambient>
+          <diffuse>0.55 0.4 0.25 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+
+      <!-- 4 corner legs (under the rail ends only, x=+/-0.14 keeps them
+           inboard of the 0.32m rail length) carrying each rail down to
+           true ground. The whole span between/beyond them, and the full
+           0.313m gap between the two rails, is left open for the arm. -->
+      <collision name="collision_leg_fl">
+        <pose>0.14 -0.1715 0.265 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.03 0.03 0.53</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="visual_leg_fl">
+        <pose>0.14 -0.1715 0.265 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.03 0.03 0.53</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.25 0.18 0.1 1</ambient>
+          <diffuse>0.4 0.3 0.18 1</diffuse>
+        </material>
+      </visual>
+
+      <collision name="collision_leg_bl">
+        <pose>-0.14 -0.1715 0.265 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.03 0.03 0.53</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="visual_leg_bl">
+        <pose>-0.14 -0.1715 0.265 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.03 0.03 0.53</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.25 0.18 0.1 1</ambient>
+          <diffuse>0.4 0.3 0.18 1</diffuse>
+        </material>
+      </visual>
+
+      <collision name="collision_leg_fr">
+        <pose>0.14 0.1715 0.265 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.03 0.03 0.53</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="visual_leg_fr">
+        <pose>0.14 0.1715 0.265 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.03 0.03 0.53</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.25 0.18 0.1 1</ambient>
+          <diffuse>0.4 0.3 0.18 1</diffuse>
+        </material>
+      </visual>
+
+      <collision name="collision_leg_br">
+        <pose>-0.14 0.1715 0.265 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.03 0.03 0.53</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="visual_leg_br">
+        <pose>-0.14 0.1715 0.265 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.03 0.03 0.53</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.25 0.18 0.1 1</ambient>
+          <diffuse>0.4 0.3 0.18 1</diffuse>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>

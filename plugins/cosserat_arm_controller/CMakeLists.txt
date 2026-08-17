@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(tendon_arm_controller)
+project(cosserat_arm_controller)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -12,11 +12,12 @@ find_package(gz-sim8 REQUIRED)
 find_package(gz-transport13 REQUIRED)
 find_package(gz-msgs10 REQUIRED)
 
-add_library(TendonArmController SHARED TendonArmController.cc)
+add_library(CosseratArmController SHARED
+  CosseratArmController.cc
+  CosseratRodSolver.cpp
+)
 
-target_include_directories(TendonArmController PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
-
-target_link_libraries(TendonArmController PRIVATE
+target_link_libraries(CosseratArmController PRIVATE
   gz-plugin2::register
   gz-sim8::gz-sim8
   gz-transport13::gz-transport13

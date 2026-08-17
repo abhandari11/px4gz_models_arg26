@@ -1,0 +1,1169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf version='1.9'>
+  <!--
+    3-tendon soft continuum arm: Ø40mm OD / Ø30mm ID lattice-TPU tube
+    (behaves like a traditional silicone continuum arm), discretized as
+    N=15 rigid segments (total length L=0.40m, ~26.67mm per segment)
+    coupled by 2-DOF universal joints (axis=X, axis2=Y bending) - same
+    physical arm and discretization pattern as continuum_arm_pcc, but driven
+    by a dynamic Cosserat rod mechanics solver (plugins/cosserat_arm_controller)
+    instead of PCC's uniform-angle-split kinematic model. Segment
+    visual/collision geometry stays a solid outer-radius (20mm) cylinder for
+    simplicity (SDF has no annulus primitive); the <inertial> mass/inertia
+    below are computed from the TRUE hollow-tube cross-section instead, so
+    physics (weight, bending stiffness via the solver's Kse/Kbt) reflects
+    the real tube, not a solid rod - see gen_cosserat_arm.py.
+
+    3 tendons run along the inner wall at the 30mm-diameter circle (pitch
+    radius 15mm = ID/2), 120deg apart, matching the physical routing.
+
+    Unlike continuum_arm_pcc, joints here carry NO spring/damper dynamics:
+    elasticity (E=5e5 Pa, G=1.6e5 Pa - see model.config for the lattice-TPU
+    modulus justification) is modeled properly inside the Cosserat solver's
+    own constitutive law (Kse/Kbt), which also produces a physically correct
+    TAPERED curvature distribution (more bend near the base, less near the
+    tip, from the free-tip boundary condition) rather than PCC's crude equal
+    split across every joint - see CosseratArmController.hh's header comment
+    for the full pipeline (tendon lengths -> tensions -> BVP shooting solve
+    -> per-joint relative-rotation targets -> PD force drive on the real
+    physics joints).
+
+    Each segment link's own origin is at its geometric center; joints are
+    offset (child-relative pose, +half segment length along local Z) up to
+    the proximal/top face of that segment, where it welds to the previous
+    segment's (or the base cylinder's) bottom face. Arm hangs along -Z from
+    the base cylinder's bottom face, matching a bottom-mounted attachment
+    (same convention as continuum_arm_pcc).
+
+    Segments are shaded in an amber/orange gradient (base to tip) so this
+    model reads as visually distinct from continuum_arm_pcc's blue at a
+    glance when both are loaded in the same scene.
+
+    Mass budget: total assembly (base + 15 segments) is ~250g, split as
+    m_base=78.43g + 15*m_seg=11.44g = 250.00g, using a
+    uniform effective density of 780.2 kg/m^3 (lattice-infill TPU, ~65%
+    of solid TPU's ~1200 kg/m^3) across base and tube alike - see
+    gen_cosserat_arm.py.
+
+    Mount contract: continuum_arm_cosserat/base_cyl's top face (z=0 in this
+    module's own frame) is the attachment interface - same contract as
+    continuum_arm_pcc/rigid_arm_3link - see those models' header comments
+    for the composing-file glue-joint pattern.
+  -->
+  <model name='continuum_arm_cosserat'>
+    <self_collide>false</self_collide>
+    <static>false</static>
+
+    <link name="continuum_arm_cosserat/base_cyl">
+      <pose>0 0 -0.01000 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.078431</mass>
+        <inertia>
+          <ixx>3.398693e-05</ixx>
+          <iyy>3.398693e-05</iyy>
+          <izz>6.274510e-05</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_cosserat/base_cyl_collision">
+        <geometry>
+          <cylinder><radius>0.04</radius><length>0.02</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_cosserat/base_cyl_visual">
+        <geometry>
+          <cylinder><radius>0.04</radius><length>0.02</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.20 0.08 0.02 1</ambient>
+          <diffuse>0.35 0.14 0.03 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <!-- Segment 1/15 -->
+    <link name="continuum_arm_cosserat/segment_1">
+      <pose>0 0 -0.03333 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_cosserat/segment_1_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_cosserat/segment_1_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.350 0.150 0.020 1</ambient>
+          <diffuse>0.550 0.250 0.050 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_cosserat/joint_1" type="universal">
+      <parent>continuum_arm_cosserat/base_cyl</parent>
+      <child>continuum_arm_cosserat/segment_1</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 2/15 -->
+    <link name="continuum_arm_cosserat/segment_2">
+      <pose>0 0 -0.06000 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_cosserat/segment_2_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_cosserat/segment_2_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.382 0.164 0.021 1</ambient>
+          <diffuse>0.575 0.268 0.054 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_cosserat/joint_2" type="universal">
+      <parent>continuum_arm_cosserat/segment_1</parent>
+      <child>continuum_arm_cosserat/segment_2</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 3/15 -->
+    <link name="continuum_arm_cosserat/segment_3">
+      <pose>0 0 -0.08667 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_cosserat/segment_3_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_cosserat/segment_3_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.414 0.179 0.023 1</ambient>
+          <diffuse>0.600 0.286 0.057 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_cosserat/joint_3" type="universal">
+      <parent>continuum_arm_cosserat/segment_2</parent>
+      <child>continuum_arm_cosserat/segment_3</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 4/15 -->
+    <link name="continuum_arm_cosserat/segment_4">
+      <pose>0 0 -0.11333 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_cosserat/segment_4_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_cosserat/segment_4_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.446 0.193 0.024 1</ambient>
+          <diffuse>0.625 0.304 0.061 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_cosserat/joint_4" type="universal">
+      <parent>continuum_arm_cosserat/segment_3</parent>
+      <child>continuum_arm_cosserat/segment_4</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 5/15 -->
+    <link name="continuum_arm_cosserat/segment_5">
+      <pose>0 0 -0.14000 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_cosserat/segment_5_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_cosserat/segment_5_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.479 0.207 0.026 1</ambient>
+          <diffuse>0.650 0.321 0.064 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_cosserat/joint_5" type="universal">
+      <parent>continuum_arm_cosserat/segment_4</parent>
+      <child>continuum_arm_cosserat/segment_5</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 6/15 -->
+    <link name="continuum_arm_cosserat/segment_6">
+      <pose>0 0 -0.16667 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_cosserat/segment_6_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_cosserat/segment_6_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.511 0.221 0.027 1</ambient>
+          <diffuse>0.675 0.339 0.068 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_cosserat/joint_6" type="universal">
+      <parent>continuum_arm_cosserat/segment_5</parent>
+      <child>continuum_arm_cosserat/segment_6</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 7/15 -->
+    <link name="continuum_arm_cosserat/segment_7">
+      <pose>0 0 -0.19333 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_cosserat/segment_7_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_cosserat/segment_7_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.543 0.236 0.029 1</ambient>
+          <diffuse>0.700 0.357 0.071 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_cosserat/joint_7" type="universal">
+      <parent>continuum_arm_cosserat/segment_6</parent>
+      <child>continuum_arm_cosserat/segment_7</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 8/15 -->
+    <link name="continuum_arm_cosserat/segment_8">
+      <pose>0 0 -0.22000 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_cosserat/segment_8_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_cosserat/segment_8_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.575 0.250 0.030 1</ambient>
+          <diffuse>0.725 0.375 0.075 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_cosserat/joint_8" type="universal">
+      <parent>continuum_arm_cosserat/segment_7</parent>
+      <child>continuum_arm_cosserat/segment_8</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 9/15 -->
+    <link name="continuum_arm_cosserat/segment_9">
+      <pose>0 0 -0.24667 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_cosserat/segment_9_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_cosserat/segment_9_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.607 0.264 0.031 1</ambient>
+          <diffuse>0.750 0.393 0.079 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_cosserat/joint_9" type="universal">
+      <parent>continuum_arm_cosserat/segment_8</parent>
+      <child>continuum_arm_cosserat/segment_9</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 10/15 -->
+    <link name="continuum_arm_cosserat/segment_10">
+      <pose>0 0 -0.27333 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_cosserat/segment_10_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_cosserat/segment_10_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.639 0.279 0.033 1</ambient>
+          <diffuse>0.775 0.411 0.082 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_cosserat/joint_10" type="universal">
+      <parent>continuum_arm_cosserat/segment_9</parent>
+      <child>continuum_arm_cosserat/segment_10</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 11/15 -->
+    <link name="continuum_arm_cosserat/segment_11">
+      <pose>0 0 -0.30000 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_cosserat/segment_11_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_cosserat/segment_11_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.671 0.293 0.034 1</ambient>
+          <diffuse>0.800 0.429 0.086 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_cosserat/joint_11" type="universal">
+      <parent>continuum_arm_cosserat/segment_10</parent>
+      <child>continuum_arm_cosserat/segment_11</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 12/15 -->
+    <link name="continuum_arm_cosserat/segment_12">
+      <pose>0 0 -0.32667 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_cosserat/segment_12_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_cosserat/segment_12_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.704 0.307 0.036 1</ambient>
+          <diffuse>0.825 0.446 0.089 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_cosserat/joint_12" type="universal">
+      <parent>continuum_arm_cosserat/segment_11</parent>
+      <child>continuum_arm_cosserat/segment_12</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 13/15 -->
+    <link name="continuum_arm_cosserat/segment_13">
+      <pose>0 0 -0.35333 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_cosserat/segment_13_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_cosserat/segment_13_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.736 0.321 0.037 1</ambient>
+          <diffuse>0.850 0.464 0.093 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_cosserat/joint_13" type="universal">
+      <parent>continuum_arm_cosserat/segment_12</parent>
+      <child>continuum_arm_cosserat/segment_13</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 14/15 -->
+    <link name="continuum_arm_cosserat/segment_14">
+      <pose>0 0 -0.38000 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_cosserat/segment_14_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_cosserat/segment_14_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.768 0.336 0.039 1</ambient>
+          <diffuse>0.875 0.482 0.096 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_cosserat/joint_14" type="universal">
+      <parent>continuum_arm_cosserat/segment_13</parent>
+      <child>continuum_arm_cosserat/segment_14</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 15/15 -->
+    <link name="continuum_arm_cosserat/segment_15">
+      <pose>0 0 -0.40667 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_cosserat/segment_15_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_cosserat/segment_15_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.800 0.350 0.040 1</ambient>
+          <diffuse>0.900 0.500 0.100 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_cosserat/joint_15" type="universal">
+      <parent>continuum_arm_cosserat/segment_14</parent>
+      <child>continuum_arm_cosserat/segment_15</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>0.24</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+
+    <!-- Dynamic Cosserat-rod actuation: converts a commanded 3-tendon
+         length vector into tensions, solves the static Cosserat BVP for
+         the resulting backbone shape, and drives every joint above toward
+         the resulting per-segment relative-rotation target with a PD
+         force loop (see CosseratArmController.hh for the full pipeline).
+
+         use_guided_tendons=true selects CosseratRodSolver::SolveGuided()
+         (3 discrete routing notches at 1/3, 2/3, 1 of the rod, matching
+         the hardware's own internal routing points) over the plain
+         Solve() this replaced. Two earlier tendon-loading models were
+         tried and rejected first: a load concentrated only at the tip,
+         and a UNIFORM per-unit-length load smeared along the whole rod
+         (distribute_tendon_load_continuously) - both put the tendon's
+         force through a small-curvature approximation (each point's pull
+         assumed to stay parallel to the rod's LOCAL +z, regardless of how
+         much the rod had actually bent by that point), and BOTH were live-
+         verified to genuinely buckle into a non-single-curvature,
+         multi-lobe elastica shape once tension climbed past a modest
+         threshold (a few N) - a real post-buckling mode (per-joint
+         curvature magnitude oscillating with near-zero dips between
+         clearly-curved regions), not a solver-convergence artifact, and
+         independent of youngs_modulus/shear_modulus (swept 1.6e5-1e8 Pa
+         offline with a standalone solver-only driver - buckling tension
+         and required bending tension scale together regardless of
+         material stiffness, so raising either constant alone can't help).
+         An even earlier discrete-3-notch attempt using that SAME
+         fixed-local-frame approximation at each notch made things WORSE,
+         not better - independently-approximated points geometrically
+         interfered with each other instead of reinforcing one consistent
+         pull, which is exactly what SolveGuided() fixes.
+
+         SolveGuided() replaces the fixed-local-frame guess with a
+         self-consistent outer loop: solve the BVP, read back where each
+         notch (offset from the backbone by the routing radius, per
+         tendon) actually ended up, recompute that tendon's force at each
+         notch from the ACTUAL chord direction to its neighbors (a
+         frictionless-guide idealization - tension pulls toward whichever
+         neighboring anchor on each side), and re-solve, iterating (damped,
+         relax=0.25) to a fixed point. As the rod bends, this makes each
+         notch's pull progressively MORE lateral (bending-inducing) and
+         LESS axially-compressive than the fixed-+z guess assumed - a
+         self-reinforcing effect that a standalone offline sweep (bypassing
+         gz entirely, see CosseratRodSolver.hpp) showed keeps the shape
+         genuinely single-curvature (zero oscillation dips) all the way
+         past 120deg aggregate bend at single-digit-N tension, vs. the
+         small-curvature model's ~12-15deg ceiling before onset of
+         buckling. This is the best current explanation for why the real
+         hardware (well-routed physical tendons naturally track this same
+         chord geometry) reaches high bend angles that the old
+         small-curvature approximation's simulated buckling collapse could
+         never reproduce - not a case of the real arm being made of a
+         stiffer material, since E/G tuning alone was verified not to move
+         the small-curvature model's ceiling at all.
+
+         tendon_stiffness/max_tension were rebalanced for how much LESS
+         tension SolveGuided() needs for the same bend (~2.5-3N for 65deg
+         single-tendon, vs. the small-curvature model needing ~100N+ for
+         the same target and still buckling well before reaching it);
+         max_tension=10N keeps normal operation safely inside the
+         confirmed-clean region with headroom for multi-tendon combined
+         commands (which can concentrate more tension on one tendon than
+         an equivalent single-axis command). tendon_baseline stays at 0
+         (a nonzero baseline was found, in the small-curvature-model
+         investigation, to shrink the clean window by adding constant
+         axial preload even at rest; not re-tested under SolveGuided() but
+         kept at the conservative known-safe value). continuum_arm_pcc's
+         kinematic model has no notion of axial tendon load at all, so its
+         own reachable range was always a ceiling-free idealization - the
+         point of this fix is closing the gap to it, not that PCC itself
+         changed.
+
+         youngs_modulus/shear_modulus/solidity_fill_factor (2026-08):
+         real hardware photos show a rigid-plastic (PLA/PETG-class) crossed-
+         strut lattice wall, not a continuously solid tube wall and not a
+         soft silicone/TPU material - the arm's compliance comes from the
+         lattice's sparse GEOMETRY, not a soft base material. solidity_fill_
+         factor=0.20 scales A/Ixx/Iyy/J in CosseratRodSolver's constructor
+         to model that ~80%-open wall (see CosseratRodSolver.hpp's own
+         comment); youngs_modulus is now the strut MATERIAL's own modulus
+         rather than a pre-softened "effective" value. Value derived (not
+         measured) to reproduce the PCC model's own joint stiffness baseline
+         K_theta~=1.611 N*m/rad via K_theta=EI/L: with fill_factor=0.20,
+         I_eff = 0.20*(pi/4)*(0.02^4-0.015^4) = 1.718e-8 m^4, target
+         EI = 1.611*0.4 = 0.6444 N*m^2 => E = 0.6444/1.718e-8 ~= 3.75e7 Pa -
+         squarely inside a rigid-plastic-at-sparse-fill range and inside the
+         1e7-1e8 Pa range hardware photos motivated. shear_modulus scaled to
+         keep the prior E/G~=3.125 ratio. NOTE: the buckling investigation
+         above found raising E alone doesn't fix buckling under the OLD
+         small-curvature Solve() path (buckling tension and required
+         bending tension scale together there) - that finding doesn't
+         directly apply here since SolveGuided() (active, use_guided_tendons
+         =true) doesn't exhibit that ceiling in the first place, but the
+         ~15x net EI increase (0.20 fill x 75x E) means tendon_stiffness/
+         max_tension/effort_limit below (tuned for the old, ~15x softer EI)
+         need to be re-verified against real reachability, not assumed
+         still valid - see the live verification this value's introduction
+         was accompanied by. -->
+    <plugin filename="CosseratArmController" name="cosserat_arm_controller::CosseratArmController">
+      <joint_name>continuum_arm_cosserat/joint_1</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_2</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_3</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_4</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_5</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_6</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_7</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_8</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_9</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_10</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_11</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_12</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_13</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_14</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_15</joint_name>
+      <rod_length>0.4</rod_length>
+      <rod_outer_radius>0.02</rod_outer_radius>
+      <rod_inner_radius>0.015</rod_inner_radius>
+      <youngs_modulus>3.75e7</youngs_modulus>
+      <shear_modulus>1.2e7</shear_modulus>
+      <solidity_fill_factor>0.20</solidity_fill_factor>
+      <rod_density>780.1713</rod_density>
+      <pitch_radius>0.015</pitch_radius>
+      <!-- tendon_stiffness/max_tension/effort_limit/position gains
+           re-derived and LIVE-VERIFIED (2026-08 open-loop retune, gz bench
+           harness, not just the standalone solver) against the same
+           75deg-in-2.0s/zero-overshoot open-loop target as
+           continuum_arm_pcc. The PD loop here has NO passive spring backup
+           (unlike PCC's real per-joint spring_stiffness) - all restoring/
+           holding torque comes from position_p_gain/position_d_gain alone,
+           so this model needed materially higher gains (8.0/0.10 vs PCC's
+           5.0/0.05) and a higher max_tension (120N vs the Phase-2-audit's
+           100N) to reach the same ~75deg target through the full solve+PD
+           pipeline, not just the solver in isolation. tendon_stiffness
+           unchanged (3333 N/m); effort_limit kept at the max_tension*
+           pitch_radius convention: 120*0.015=1.8 N*m.
+           IMPORTANT measurement gotcha found live: gz's real_time_factor
+           drops measurably below 1.0 as commanded tension approaches
+           max_tension (SolveGuided()'s outer loop costs more per call at
+           higher tension even though it still converges cleanly, no
+           warnings) - a wall-clock-timed step-response test then reports
+           an inflated settling time that has nothing to do with the
+           plant's actual dynamics. Bench verification must sample against
+           gz's own sim time (world stats topic), not python time.time() -
+           see gz_arm_harness.py's sim_time()/real_time_factor(). This RTF
+           drop is itself a real, reportable Task-3 compute-benchmark
+           finding (Cosserat costs more CPU than PCC/RBSN, worst at high
+           bend), not a bug to hide. -->
+      <tendon_stiffness>3333.0</tendon_stiffness>
+      <max_tension>120.0</max_tension>
+      <tendon_baseline>0.0</tendon_baseline>
+      <use_guided_tendons>true</use_guided_tendons>
+      <position_p_gain>8.0</position_p_gain>
+      <position_d_gain>0.10</position_d_gain>
+      <effort_limit>1.8</effort_limit>
+      <tendon_topic>/continuum_arm_cosserat/tendon_cmd</tendon_topic>
+      <tip_pose_topic>/continuum_arm_cosserat/tip_pose</tip_pose_topic>
+      <tip_link>continuum_arm_cosserat/segment_15</tip_link>
+
+      <!-- command_filter_omega / max_tendon_rate_m_s / solve_rate_hz
+           (2026-08 open-loop retune): raw tendon commands only set a
+           CommandShaper target now (see plugins/common/CommandShaper.hpp) -
+           the BVP is solved against the FILTERED, slowly-ramping length at
+           a throttled solve_rate_hz, not re-solved to a hard instantaneous
+           target on every command. omega/max_tendon_rate_m_s are the exact
+           same values continuum_arm_pcc uses, so both models share one
+           open-loop baseline (~2s settle, zero overshoot) and are directly
+           comparable. solve_rate_hz=50 matches this repo's usual control-
+           loop-rate convention; warm-starting (n0_/m0_,
+           guidedNotchesWarmStart_) keeps each throttled solve cheap since
+           successive filtered lengths are close together. -->
+      <command_filter_omega>2.92</command_filter_omega>
+      <max_tendon_rate_m_s>0.06</max_tendon_rate_m_s>
+      <solve_rate_hz>50.0</solve_rate_hz>
+    </plugin>
+
+    <!-- Joint state feedback (actual, physics-integrated angles), same
+         pattern continuum_arm_pcc uses - lets the test script verify the
+         arm actually bent the way the tendon command intended. -->
+    <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
+      <topic>/continuum_arm_cosserat/joint_states</topic>
+      <joint_name>continuum_arm_cosserat/joint_1</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_2</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_3</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_4</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_5</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_6</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_7</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_8</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_9</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_10</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_11</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_12</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_13</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_14</joint_name>
+      <joint_name>continuum_arm_cosserat/joint_15</joint_name>
+    </plugin>
+
+  </model>
+</sdf>

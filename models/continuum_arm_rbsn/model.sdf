@@ -1,0 +1,1089 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf version='1.9'>
+  <!--
+    Non-linear Rigid-Body Spring Network (RBSN) continuum arm: same
+    physical arm/geometry as continuum_arm_pcc and continuum_arm_cosserat
+    (Ø40mm OD / Ø30mm ID lattice-TPU tube, N=15 rigid segments, total
+    length L=0.40m, ~26.67mm per segment, 2-DOF universal joints), but the
+    THIRD, architecturally distinct mechanics model: neither PCC's
+    kinematic PD-position-tracking nor Cosserat's quasi-static BVP+PD-
+    tracking - RBSN runs genuine forward dynamics. Every joint carries its
+    own non-linear elastic restoring torque
+    tau_spring(theta) = k1*theta + k2*theta^3 plus linear viscous damping
+    (native gz-sim joint damping, no SDF spring_stiffness at all - matching
+    continuum_arm_cosserat's convention of keeping elasticity out of the
+    passive SDF joint and inside the controller instead), and tendon
+    tension is converted DIRECTLY into a generalized actuation torque
+    (not a solved/kinematic position target) via the tendon-routing
+    Jacobian's transpose - see plugins/rbsn_arm_controller's header
+    comment for the exact derivation. The resulting bend is a genuine
+    dynamic equilibrium (actuation torque balances the non-linear spring),
+    not something teleported into place by a position controller.
+
+    Active bending comes from RbsnArmController (see
+    plugins/rbsn_arm_controller), which converts a commanded 3-tendon
+    length vector (l1,l2,l3, pitch radius = tendon routing radius = 15mm =
+    ID/2, matching the 3 tendons run along the inner wall's 30mm-diameter
+    circle, 120deg apart) into pulling tensions, then into torque, split
+    evenly across the 15 joints (same even-distribution convention
+    PCC/Cosserat both use for their own actuation targets).
+
+    Each segment link's own origin is at its geometric center; joints are
+    offset (child-relative pose, +half segment length along local Z) up to
+    the proximal/top face of that segment, where it welds to the previous
+    segment's (or the base cylinder's) bottom face. Arm hangs along -Z from
+    the base cylinder's bottom face, matching a bottom-mounted attachment.
+
+    Mass budget: total assembly (base + 15 segments) is ~250g, split as
+    m_base=78.43g + 15*m_seg=11.44g = 250.00g, using the
+    same uniform effective density (780.2 kg/m^3, lattice-infill TPU) as
+    continuum_arm_pcc/continuum_arm_cosserat - identical geometry/mass
+    budget across all three models is the whole point of a fair head-to-
+    head comparison (see docs/continuum_arm_three_model_report.md).
+
+    Mount contract: continuum_arm_rbsn/base_cyl is this module's own
+    attachment point, its top face (z=0 in this file's frame) is the
+    mounting interface. Composing this onto a vehicle (e.g. hillstar) needs
+    one glue joint (parent=<vehicle base link>, child=
+    continuum_arm_rbsn/base_cyl), the same pattern rigid_arm_3link and
+    hillstar_rigid_arm use - see that model's header comment for why the
+    joint must be declared in the composing file rather than in here.
+  -->
+  <model name='continuum_arm_rbsn'>
+    <self_collide>false</self_collide>
+    <static>false</static>
+
+    <link name="continuum_arm_rbsn/base_cyl">
+      <pose>0 0 -0.01000 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.078431</mass>
+        <inertia>
+          <ixx>3.398693e-05</ixx>
+          <iyy>3.398693e-05</iyy>
+          <izz>6.274510e-05</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_rbsn/base_cyl_collision">
+        <geometry>
+          <cylinder><radius>0.04</radius><length>0.02</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_rbsn/base_cyl_visual">
+        <geometry>
+          <cylinder><radius>0.04</radius><length>0.02</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.05 0.20 0.08 1</ambient>
+          <diffuse>0.08 0.30 0.12 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <!-- Segment 1/15 -->
+    <link name="continuum_arm_rbsn/segment_1">
+      <pose>0 0 -0.03333 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_rbsn/segment_1_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_rbsn/segment_1_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.050 0.350 0.080 1</ambient>
+          <diffuse>0.080 0.550 0.150 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_rbsn/joint_1" type="universal">
+      <parent>continuum_arm_rbsn/base_cyl</parent>
+      <child>continuum_arm_rbsn/segment_1</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 2/15 -->
+    <link name="continuum_arm_rbsn/segment_2">
+      <pose>0 0 -0.06000 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_rbsn/segment_2_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_rbsn/segment_2_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.057 0.382 0.093 1</ambient>
+          <diffuse>0.089 0.579 0.168 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_rbsn/joint_2" type="universal">
+      <parent>continuum_arm_rbsn/segment_1</parent>
+      <child>continuum_arm_rbsn/segment_2</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 3/15 -->
+    <link name="continuum_arm_rbsn/segment_3">
+      <pose>0 0 -0.08667 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_rbsn/segment_3_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_rbsn/segment_3_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.064 0.414 0.106 1</ambient>
+          <diffuse>0.097 0.607 0.186 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_rbsn/joint_3" type="universal">
+      <parent>continuum_arm_rbsn/segment_2</parent>
+      <child>continuum_arm_rbsn/segment_3</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 4/15 -->
+    <link name="continuum_arm_rbsn/segment_4">
+      <pose>0 0 -0.11333 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_rbsn/segment_4_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_rbsn/segment_4_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.071 0.446 0.119 1</ambient>
+          <diffuse>0.106 0.636 0.204 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_rbsn/joint_4" type="universal">
+      <parent>continuum_arm_rbsn/segment_3</parent>
+      <child>continuum_arm_rbsn/segment_4</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 5/15 -->
+    <link name="continuum_arm_rbsn/segment_5">
+      <pose>0 0 -0.14000 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_rbsn/segment_5_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_rbsn/segment_5_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.079 0.479 0.131 1</ambient>
+          <diffuse>0.114 0.664 0.221 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_rbsn/joint_5" type="universal">
+      <parent>continuum_arm_rbsn/segment_4</parent>
+      <child>continuum_arm_rbsn/segment_5</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 6/15 -->
+    <link name="continuum_arm_rbsn/segment_6">
+      <pose>0 0 -0.16667 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_rbsn/segment_6_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_rbsn/segment_6_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.086 0.511 0.144 1</ambient>
+          <diffuse>0.123 0.693 0.239 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_rbsn/joint_6" type="universal">
+      <parent>continuum_arm_rbsn/segment_5</parent>
+      <child>continuum_arm_rbsn/segment_6</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 7/15 -->
+    <link name="continuum_arm_rbsn/segment_7">
+      <pose>0 0 -0.19333 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_rbsn/segment_7_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_rbsn/segment_7_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.093 0.543 0.157 1</ambient>
+          <diffuse>0.131 0.721 0.257 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_rbsn/joint_7" type="universal">
+      <parent>continuum_arm_rbsn/segment_6</parent>
+      <child>continuum_arm_rbsn/segment_7</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 8/15 -->
+    <link name="continuum_arm_rbsn/segment_8">
+      <pose>0 0 -0.22000 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_rbsn/segment_8_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_rbsn/segment_8_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.100 0.575 0.170 1</ambient>
+          <diffuse>0.140 0.750 0.275 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_rbsn/joint_8" type="universal">
+      <parent>continuum_arm_rbsn/segment_7</parent>
+      <child>continuum_arm_rbsn/segment_8</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 9/15 -->
+    <link name="continuum_arm_rbsn/segment_9">
+      <pose>0 0 -0.24667 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_rbsn/segment_9_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_rbsn/segment_9_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.107 0.607 0.183 1</ambient>
+          <diffuse>0.149 0.779 0.293 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_rbsn/joint_9" type="universal">
+      <parent>continuum_arm_rbsn/segment_8</parent>
+      <child>continuum_arm_rbsn/segment_9</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 10/15 -->
+    <link name="continuum_arm_rbsn/segment_10">
+      <pose>0 0 -0.27333 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_rbsn/segment_10_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_rbsn/segment_10_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.114 0.639 0.196 1</ambient>
+          <diffuse>0.157 0.807 0.311 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_rbsn/joint_10" type="universal">
+      <parent>continuum_arm_rbsn/segment_9</parent>
+      <child>continuum_arm_rbsn/segment_10</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 11/15 -->
+    <link name="continuum_arm_rbsn/segment_11">
+      <pose>0 0 -0.30000 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_rbsn/segment_11_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_rbsn/segment_11_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.121 0.671 0.209 1</ambient>
+          <diffuse>0.166 0.836 0.329 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_rbsn/joint_11" type="universal">
+      <parent>continuum_arm_rbsn/segment_10</parent>
+      <child>continuum_arm_rbsn/segment_11</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 12/15 -->
+    <link name="continuum_arm_rbsn/segment_12">
+      <pose>0 0 -0.32667 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_rbsn/segment_12_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_rbsn/segment_12_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.129 0.704 0.221 1</ambient>
+          <diffuse>0.174 0.864 0.346 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_rbsn/joint_12" type="universal">
+      <parent>continuum_arm_rbsn/segment_11</parent>
+      <child>continuum_arm_rbsn/segment_12</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 13/15 -->
+    <link name="continuum_arm_rbsn/segment_13">
+      <pose>0 0 -0.35333 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_rbsn/segment_13_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_rbsn/segment_13_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.136 0.736 0.234 1</ambient>
+          <diffuse>0.183 0.893 0.364 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_rbsn/joint_13" type="universal">
+      <parent>continuum_arm_rbsn/segment_12</parent>
+      <child>continuum_arm_rbsn/segment_13</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 14/15 -->
+    <link name="continuum_arm_rbsn/segment_14">
+      <pose>0 0 -0.38000 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_rbsn/segment_14_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_rbsn/segment_14_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.143 0.768 0.247 1</ambient>
+          <diffuse>0.191 0.921 0.382 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_rbsn/joint_14" type="universal">
+      <parent>continuum_arm_rbsn/segment_13</parent>
+      <child>continuum_arm_rbsn/segment_14</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+    <!-- Segment 15/15 -->
+    <link name="continuum_arm_rbsn/segment_15">
+      <pose>0 0 -0.40667 0 0 0</pose>
+      <gravity>true</gravity>
+      <self_collide>false</self_collide>
+      <velocity_decay/>
+      <inertial>
+        <mass>0.011438</mass>
+        <inertia>
+          <ixx>2.464975e-06</ixx>
+          <iyy>2.464975e-06</iyy>
+          <izz>3.574346e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="continuum_arm_rbsn/segment_15_collision">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+      </collision>
+      <visual name="continuum_arm_rbsn/segment_15_visual">
+        <geometry>
+          <cylinder><radius>0.02</radius><length>0.02666666666666667</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.150 0.800 0.260 1</ambient>
+          <diffuse>0.200 0.950 0.400 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+    <joint name="continuum_arm_rbsn/joint_15" type="universal">
+      <parent>continuum_arm_rbsn/segment_14</parent>
+      <child>continuum_arm_rbsn/segment_15</child>
+      <pose>0 0 0.01333 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis>
+      <axis2>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.8</lower>
+          <upper>0.8</upper>
+          <effort>5.0</effort>
+          <velocity>5.0</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.08</damping>
+        </dynamics>
+      </axis2>
+    </joint>
+
+    <!-- Non-linear rigid-body-spring-network dynamics: tendon tension ->
+         actuation TORQUE (not a solved position target) via the tendon-
+         routing Jacobian transpose, reacting against each joint's own
+         non-linear spring tau_spring=k1*theta+k2*theta^3 and viscous
+         damper tau_damp=c_theta*theta_dot - see
+         plugins/rbsn_arm_controller's header comment for the exact
+         derivation and class docs.
+
+         k1/k2/c_theta (2026-08, live-tuned via the gz bench harness,
+         matching the same open-loop target continuum_arm_pcc/
+         continuum_arm_cosserat were calibrated against): starting from a
+         linearized estimate near the shared K_theta~=1.611 N*m/rad
+         baseline (k1=1.6, k2=0) gave only ~44deg at the calibration step
+         (max_tension-saturated single-tendon shorten of 0.036m) - live-
+         verified too stiff to reach the target range at this arm's actual
+         actuation-torque budget, so k1 was walked down (1.6 -> 0.94 ->
+         0.82) until the live response matched. k2=0 (pure linear spring
+         sufficed to hit the target once k1 was right; left as an SDF-
+         exposed, independently tunable knob for anyone wanting to add
+         real strain-hardening at large angles). Live-verified (gz bench
+         harness, sim-time-based measurement): 71.8deg reached in 2.21s,
+         ~0% overshoot - directly comparable to PCC's 73.9deg/1.91s and
+         Cosserat's 78.6deg/2.19s. tendon_stiffness/max_tension reuse
+         continuum_arm_cosserat's already-validated tendon actuation model
+         (same physical tendon assumptions) - see the plugin block below
+         for the exact tuned values.
+
+         effort_limit here is a generous safety clamp on the NET per-joint
+         torque (actuation - spring - damping), decoupled from the old PD-
+         based max_tension*pitch_radius convention since RBSN's torque
+         comes from real dynamics, not a position-tracking ceiling.
+
+         command_filter_omega/max_tendon_rate_m_s: identical values to the
+         other two models' CommandShaper (plugins/common/CommandShaper.hpp)
+         so all three models share one open-loop command-shaping baseline -
+         see docs/continuum_arm_three_model_report.md.
+
+         UPDATE 2026-08 (gravity-sag fix): the above k1=0.82/tendon_
+         stiffness=3333/max_tension=120/effort_limit=3.0 were calibrated on
+         the bare standalone bench only, which structurally cannot exercise
+         off-axis gravity (the bench mounts the arm hanging straight down,
+         aligned with gravity, so a symmetric neutral pose feels zero
+         gravity torque by construction). Live-verified on
+         hillstar_continuum_arm_gripper (the actual flying vehicle, arm +
+         gripper_3finger payload at the tip) that a 45deg vehicle pitch -
+         which this mission profile commands - put the arm ~29deg off-axis
+         from gravity, at k1=0.82, and the arm passively sagged to ~29deg
+         even with zero bend commanded. Retuned against a rotated-gravity
+         bench variant (world <gravity> rotated 45deg, same effect as
+         tilting the mount) with continuum_arm_pcc's own 45deg-tilt passive
+         droop (9.7deg, its position-PD holds against gravity far more
+         rigidly) as the target: k1 1.611->6.2, c_theta scaled to preserve
+         the same damping ratio (0.038->0.095, both propto sqrt(k1)) ->
+         10.2deg droop on the bare bench, matches PCC closely. That much
+         stiffer spring crushed reach (36mm shorten: 62deg -> 14deg), so
+         tendon_stiffness/max_tension/effort_limit were rebalanced upward
+         (3333->22000 N/m, 120->800 N, 3.0->20.0 N*m) to restore it - live-
+         verified with the ACTUAL gripper payload attached (not just the
+         bare bench, which understated the needed actuation budget by a
+         real margin): a sustained 80deg step command settles at ~80-84deg,
+         and the mission's own 0->80deg cosine sweep (5 cycles, under the
+         45deg pitch) peaks consistently at 76-78deg. See
+         continuum_arm_controller.py's ContinuumArmGains docstring for the
+         matching closed-loop gain retune (curvature_scale/kp/ki) this
+         actuation change also required. -->
+    <plugin filename="RbsnArmController" name="rbsn_arm_controller::RbsnArmController">
+      <joint_name>continuum_arm_rbsn/joint_1</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_2</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_3</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_4</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_5</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_6</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_7</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_8</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_9</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_10</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_11</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_12</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_13</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_14</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_15</joint_name>
+      <pitch_radius>0.015</pitch_radius>
+      <rest_length>0.4</rest_length>
+      <tendon_stiffness>22000.0</tendon_stiffness>
+      <max_tension>800.0</max_tension>
+      <tendon_baseline>0.0</tendon_baseline>
+      <k1>6.2</k1>
+      <k2>0.0</k2>
+      <c_theta>0.095</c_theta>
+      <effort_limit>20.0</effort_limit>
+      <tendon_topic>/continuum_arm_rbsn/tendon_cmd</tendon_topic>
+      <command_filter_omega>2.92</command_filter_omega>
+      <max_tendon_rate_m_s>0.06</max_tendon_rate_m_s>
+    </plugin>
+
+    <!-- Joint state feedback (actual, physics-integrated angles), same
+         pattern rigid_arm_3link uses - lets the test script verify the arm
+         actually bent the way the tendon command intended. -->
+    <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
+      <topic>/continuum_arm_rbsn/joint_states</topic>
+      <joint_name>continuum_arm_rbsn/joint_1</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_2</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_3</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_4</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_5</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_6</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_7</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_8</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_9</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_10</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_11</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_12</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_13</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_14</joint_name>
+      <joint_name>continuum_arm_rbsn/joint_15</joint_name>
+    </plugin>
+
+  </model>
+</sdf>
